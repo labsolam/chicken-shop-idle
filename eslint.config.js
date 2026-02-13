@@ -9,7 +9,7 @@ import eslintConfigPrettier from "eslint-config-prettier";
  * - Ignores dist/ and node_modules/
  */
 export default tseslint.config(
-  { ignores: ["dist/", "node_modules/"] },
+  { ignores: ["dist/", "node_modules/", "e2e/"] },
   eslint.configs.recommended,
   ...tseslint.configs.strict,
   eslintConfigPrettier,
