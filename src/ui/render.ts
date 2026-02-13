@@ -1,4 +1,5 @@
 import { GameState } from "../types/game-state";
+import { OfflineResult } from "../engine/offline";
 
 /**
  * AGENT CONTEXT: Minimal DOM renderer.
@@ -15,6 +16,17 @@ function formatProgress(progress: number): string {
   return `${Math.floor(progress * 100)}%`;
 }
 
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${minutes}m`;
+}
+
 export function render(state: GameState): void {
   const moneyEl = document.getElementById("money");
   const readyEl = document.getElementById("chickens-ready");
@@ -26,4 +38,20 @@ export function render(state: GameState): void {
   if (progressEl)
     progressEl.textContent = formatProgress(state.cookingProgress);
   if (totalEl) totalEl.textContent = String(state.totalChickensCooked);
+}
+
+export function showOfflineBanner(offline: OfflineResult): void {
+  const bannerEl = document.getElementById("offline-banner");
+  if (!bannerEl) return;
+
+  const duration = formatDuration(offline.elapsedMs);
+  const money = formatMoney(offline.moneyEarned);
+  const chickens = offline.chickensProduced;
+
+  bannerEl.textContent = `Welcome back! You were away for ${duration}. Your shop sold ${chickens} chicken${chickens !== 1 ? "s" : ""} and earned ${money}.`;
+  bannerEl.style.display = "block";
+
+  setTimeout(() => {
+    bannerEl.style.display = "none";
+  }, 8000);
 }

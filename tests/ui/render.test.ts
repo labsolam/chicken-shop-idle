@@ -1,9 +1,10 @@
 /**
  * @vitest-environment happy-dom
  */
-import { describe, it, expect, beforeEach } from "vitest";
-import { render } from "../../src/ui/render";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { render, showOfflineBanner } from "../../src/ui/render";
 import { createInitialState, GameState } from "../../src/types/game-state";
+import { OfflineResult } from "../../src/engine/offline";
 
 function stateWith(overrides: Partial<GameState>): GameState {
   return { ...createInitialState(), ...overrides };
@@ -15,6 +16,7 @@ function setupDOM(): void {
     <span id="chickens-ready"></span>
     <span id="cooking-progress"></span>
     <span id="total-cooked"></span>
+    <div id="offline-banner" style="display: none;"></div>
   `;
 }
 
@@ -70,5 +72,83 @@ describe("render", () => {
   it("does not throw when DOM elements are missing", () => {
     document.body.innerHTML = "";
     expect(() => render(stateWith({}))).not.toThrow();
+  });
+});
+
+describe("showOfflineBanner", () => {
+  beforeEach(() => {
+    setupDOM();
+    vi.useFakeTimers();
+  });
+
+  it("shows banner with earnings summary", () => {
+    const offline: OfflineResult = {
+      state: stateWith({}),
+      elapsedMs: 3600000, // 1 hour
+      chickensProduced: 720,
+      moneyEarned: 72000,
+    };
+    showOfflineBanner(offline);
+
+    const banner = document.getElementById("offline-banner") as HTMLElement;
+    expect(banner.style.display).toBe("block");
+    expect(banner.textContent).toContain("1h 0m");
+    expect(banner.textContent).toContain("720 chickens");
+    expect(banner.textContent).toContain("$720.00");
+  });
+
+  it("uses singular chicken for 1 chicken", () => {
+    const offline: OfflineResult = {
+      state: stateWith({}),
+      elapsedMs: 5000,
+      chickensProduced: 1,
+      moneyEarned: 100,
+    };
+    showOfflineBanner(offline);
+
+    const banner = document.getElementById("offline-banner") as HTMLElement;
+    expect(banner.textContent).toContain("1 chicken ");
+    expect(banner.textContent).not.toContain("1 chickens");
+  });
+
+  it("formats short durations as minutes", () => {
+    const offline: OfflineResult = {
+      state: stateWith({}),
+      elapsedMs: 300000, // 5 minutes
+      chickensProduced: 60,
+      moneyEarned: 6000,
+    };
+    showOfflineBanner(offline);
+
+    const banner = document.getElementById("offline-banner") as HTMLElement;
+    expect(banner.textContent).toContain("5m.");
+    expect(banner.textContent).not.toMatch(/\d+h/);
+  });
+
+  it("hides banner after 8 seconds", () => {
+    const offline: OfflineResult = {
+      state: stateWith({}),
+      elapsedMs: 60000,
+      chickensProduced: 12,
+      moneyEarned: 1200,
+    };
+    showOfflineBanner(offline);
+
+    const banner = document.getElementById("offline-banner") as HTMLElement;
+    expect(banner.style.display).toBe("block");
+
+    vi.advanceTimersByTime(8000);
+    expect(banner.style.display).toBe("none");
+  });
+
+  it("does not throw when banner element is missing", () => {
+    document.body.innerHTML = "";
+    const offline: OfflineResult = {
+      state: stateWith({}),
+      elapsedMs: 60000,
+      chickensProduced: 12,
+      moneyEarned: 1200,
+    };
+    expect(() => showOfflineBanner(offline)).not.toThrow();
   });
 });

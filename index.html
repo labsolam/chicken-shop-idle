@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -13,10 +13,19 @@
         background: #1a1a1a;
         color: #e0e0e0;
       }
-      h1 { color: #f5a623; }
-      .stat { margin: 8px 0; }
-      .label { color: #888; }
-      .value { color: #fff; font-weight: bold; }
+      h1 {
+        color: #f5a623;
+      }
+      .stat {
+        margin: 8px 0;
+      }
+      .label {
+        color: #888;
+      }
+      .value {
+        color: #fff;
+        font-weight: bold;
+      }
       #sell-button {
         margin-top: 16px;
         padding: 12px 24px;
@@ -28,11 +37,22 @@
         font-family: monospace;
         font-weight: bold;
       }
-      #sell-button:hover { background: #e6951a; }
+      #sell-button:hover {
+        background: #e6951a;
+      }
+      #offline-banner {
+        display: none;
+        margin: 12px 0;
+        padding: 12px;
+        background: #2a4a2a;
+        border-left: 4px solid #4caf50;
+        color: #c8e6c9;
+      }
     </style>
   </head>
   <body>
     <h1>Chicken Shop Idle</h1>
+    <div id="offline-banner"></div>
 
     <div class="stat">
       <span class="label">Money:</span>

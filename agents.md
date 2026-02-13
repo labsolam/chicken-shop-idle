@@ -30,26 +30,30 @@ Pure state machine. Engine functions are pure (`state => newState`). UI is a thi
 
 ## Source Map
 
-| Path                      | Purpose                                                |
-| ------------------------- | ------------------------------------------------------ |
-| `eslint.config.js`        | ESLint flat config — strict TS rules + Prettier compat |
-| `.prettierrc`             | Prettier formatting config                             |
-| `.husky/pre-commit`       | Pre-commit hook — lint-staged then tests               |
-| `playwright.config.ts`    | Playwright e2e config — auto-starts Vite, screenshots  |
-| `src/types/game-state.ts` | GameState interface and initial state factory          |
-| `src/engine/tick.ts`      | Core tick function — advances time, cooks chickens     |
-| `src/engine/sell.ts`      | Sell action — converts ready chickens to money         |
-| `src/ui/render.ts`        | DOM renderer — reads state, updates elements           |
-| `src/main.ts`             | Entry point — game loop, event wiring                  |
+| Path                      | Purpose                                                             |
+| ------------------------- | ------------------------------------------------------------------- |
+| `eslint.config.js`        | ESLint flat config — strict TS rules + Prettier compat              |
+| `.prettierrc`             | Prettier formatting config                                          |
+| `.husky/pre-commit`       | Pre-commit hook — lint-staged then tests                            |
+| `playwright.config.ts`    | Playwright e2e config — auto-starts Vite, screenshots               |
+| `src/types/game-state.ts` | GameState interface and initial state factory                       |
+| `src/engine/tick.ts`      | Core tick function — advances time, cooks chickens                  |
+| `src/engine/sell.ts`      | Sell action — converts ready chickens to money                      |
+| `src/engine/save.ts`      | Pure serialize/deserialize for game state persistence               |
+| `src/engine/offline.ts`   | Offline earnings — auto-sells chickens produced while away (8h cap) |
+| `src/ui/render.ts`        | DOM renderer — reads state, updates elements, offline banner        |
+| `src/main.ts`             | Entry point — game loop, localStorage save/load, offline earnings   |
 
 ## Test Map
 
-| Path                        | Covers                                                                  |
-| --------------------------- | ----------------------------------------------------------------------- |
-| `tests/engine/tick.test.ts` | tick() — cooking progress, production, offline catch-up, immutability   |
-| `tests/engine/sell.test.ts` | sellChickens() — earnings, no-op when empty, immutability               |
-| `tests/ui/render.test.ts`   | render() — money format, progress %, element updates (happy-dom)        |
-| `e2e/game.spec.ts`          | Full browser: initial state, cooking, selling, screenshots (Playwright) |
+| Path                           | Covers                                                                  |
+| ------------------------------ | ----------------------------------------------------------------------- |
+| `tests/engine/tick.test.ts`    | tick() — cooking progress, production, offline catch-up, immutability   |
+| `tests/engine/sell.test.ts`    | sellChickens() — earnings, no-op when empty, immutability               |
+| `tests/engine/save.test.ts`    | serializeState/deserializeState — round-trip, validation, edge cases    |
+| `tests/engine/offline.test.ts` | calculateOfflineEarnings — production, auto-sell, 8h cap, immutability  |
+| `tests/ui/render.test.ts`      | render() + showOfflineBanner() — formatting, banner display (happy-dom) |
+| `e2e/game.spec.ts`             | Full browser: initial state, cooking, selling, screenshots (Playwright) |
 
 ## Design Decisions
 

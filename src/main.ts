@@ -1,25 +1,62 @@
-import { createInitialState } from "./types/game-state";
+import { createInitialState, GameState } from "./types/game-state";
 import { tick } from "./engine/tick";
 import { sellChickens } from "./engine/sell";
-import { render } from "./ui/render";
+import { serializeState, deserializeState } from "./engine/save";
+import { calculateOfflineEarnings, OfflineResult } from "./engine/offline";
+import { render, showOfflineBanner } from "./ui/render";
 
 /**
  * AGENT CONTEXT: Application entry point.
- * Sets up the game loop (requestAnimationFrame) and wires UI events.
- * Game state lives here as a single mutable reference — all updates
- * go through pure engine functions that return new state objects.
+ * Loads saved game from localStorage (or creates fresh state).
+ * Calculates offline earnings on return. Auto-saves every 30s + on page unload.
+ * Game loop uses performance.now() for frame delta; Date.now() for save timestamps.
  */
 
-let state = createInitialState();
-state.lastUpdateTimestamp = performance.now();
+const SAVE_KEY = "chicken-shop-idle-save";
+const AUTO_SAVE_INTERVAL_MS = 30_000;
+
+function loadOrCreate(): { state: GameState; offline: OfflineResult | null } {
+  const json = localStorage.getItem(SAVE_KEY);
+  if (!json) {
+    return { state: createInitialState(), offline: null };
+  }
+
+  const saved = deserializeState(json);
+  if (!saved) {
+    return { state: createInitialState(), offline: null };
+  }
+
+  const offline = calculateOfflineEarnings(saved, Date.now());
+  return { state: offline.state, offline };
+}
+
+function saveGame(state: GameState): void {
+  localStorage.setItem(SAVE_KEY, serializeState(state));
+}
+
+// --- Initialize ---
+
+const loaded = loadOrCreate();
+let state = loaded.state;
+let lastFrameTime = performance.now();
+
+if (loaded.offline && loaded.offline.moneyEarned > 0) {
+  showOfflineBanner(loaded.offline);
+}
+
+// --- Game loop ---
 
 function gameLoop(currentTime: number): void {
-  const deltaMs = currentTime - state.lastUpdateTimestamp;
+  const deltaMs = currentTime - lastFrameTime;
+  lastFrameTime = currentTime;
+
   state = tick(state, deltaMs);
-  state = { ...state, lastUpdateTimestamp: currentTime };
+  state = { ...state, lastUpdateTimestamp: Date.now() };
   render(state);
   requestAnimationFrame(gameLoop);
 }
+
+// --- Events ---
 
 function onSellClick(): void {
   state = sellChickens(state);
@@ -30,6 +67,13 @@ const sellButton = document.getElementById("sell-button");
 if (sellButton) {
   sellButton.addEventListener("click", onSellClick);
 }
+
+// --- Persistence ---
+
+setInterval(() => saveGame(state), AUTO_SAVE_INTERVAL_MS);
+window.addEventListener("beforeunload", () => saveGame(state));
+
+// --- Start ---
 
 render(state);
 requestAnimationFrame(gameLoop);
