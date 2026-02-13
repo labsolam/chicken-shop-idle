@@ -23,6 +23,7 @@ export function render(state: GameState): void {
 
   if (moneyEl) moneyEl.textContent = formatMoney(state.money);
   if (readyEl) readyEl.textContent = String(state.chickensReady);
-  if (progressEl) progressEl.textContent = formatProgress(state.cookingProgress);
+  if (progressEl)
+    progressEl.textContent = formatProgress(state.cookingProgress);
   if (totalEl) totalEl.textContent = String(state.totalChickensCooked);
 }

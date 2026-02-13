@@ -6,10 +6,32 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write 'src/**/*.ts' 'tests/**/*.ts' '*.config.*' '*.json'",
+    "format:check": "prettier --check 'src/**/*.ts' 'tests/**/*.ts' '*.config.*' '*.json'",
+    "check": "npm run format:check && npm run lint && npm run test",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,md,html,css}": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.1",
     "typescript": "^5.7.0",
+    "typescript-eslint": "^8.55.0",
     "vite": "^6.1.0",
     "vitest": "^3.0.0"
   }
