@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chicken Shop Idle</title>
+    <style>
+      body {
+        font-family: monospace;
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 0 20px;
+        background: #1a1a1a;
+        color: #e0e0e0;
+      }
+      h1 { color: #f5a623; }
+      .stat { margin: 8px 0; }
+      .label { color: #888; }
+      .value { color: #fff; font-weight: bold; }
+      #sell-button {
+        margin-top: 16px;
+        padding: 12px 24px;
+        font-size: 16px;
+        background: #f5a623;
+        color: #1a1a1a;
+        border: none;
+        cursor: pointer;
+        font-family: monospace;
+        font-weight: bold;
+      }
+      #sell-button:hover { background: #e6951a; }
+    </style>
+  </head>
+  <body>
+    <h1>Chicken Shop Idle</h1>
+
+    <div class="stat">
+      <span class="label">Money:</span>
+      <span class="value" id="money">$0.00</span>
+    </div>
+    <div class="stat">
+      <span class="label">Chickens Ready:</span>
+      <span class="value" id="chickens-ready">0</span>
+    </div>
+    <div class="stat">
+      <span class="label">Cooking:</span>
+      <span class="value" id="cooking-progress">0%</span>
+    </div>
+    <div class="stat">
+      <span class="label">Total Cooked:</span>
+      <span class="value" id="total-cooked">0</span>
+    </div>
+
+    <button id="sell-button">Sell Chickens</button>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
