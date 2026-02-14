@@ -69,9 +69,14 @@ Pure state machine. Engine functions are pure (`state => newState`). UI is a thi
 
 ## Plans
 
-| ID  | File                                 | Status   | Summary                               |
-| --- | ------------------------------------ | -------- | ------------------------------------- |
-| 001 | `docs/plans/001-initial-scaffold.md` | Complete | Project setup, core loop, tests, docs |
+Plans live in two directories based on status:
+
+- **`docs/plans/todo/`** — Active and upcoming plans
+- **`docs/plans/complete/`** — Finished plans (moved here when done)
+
+| ID  | File                                          | Status   | Summary                               |
+| --- | --------------------------------------------- | -------- | ------------------------------------- |
+| 001 | `docs/plans/complete/001-initial-scaffold.md` | Complete | Project setup, core loop, tests, docs |
 
 ## Conventions
 
@@ -121,12 +126,21 @@ Why this option over alternatives.
 What follows from this decision — trade-offs, constraints, future work.
 ```
 
+### Plan lifecycle
+
+1. **Create** — New plans go in `docs/plans/todo/NNN-<slug>.md` with status `Todo`.
+2. **Work** — Set status to `In Progress` when you start. Check off steps as you go.
+3. **Complete** — When all steps are done, set status to `Complete`, add an `## Outcome` section, then move the file to `docs/plans/complete/`.
+4. **Abandon** — If a plan is dropped, set status to `Abandoned` with a brief reason, then move to `docs/plans/complete/` (it's still a historical record).
+
+Always update the Plans table in this file (agents.md) when a plan changes directory or status.
+
 ### After every change, review and update
 
-1. **This file (agents.md)** — Keep the Design Decisions table, Source Map, Test Map, and Conventions in sync with the current code.
+1. **This file (agents.md)** — Keep the Design Decisions table, Source Map, Test Map, Plans table, and Conventions in sync with the current code.
 2. **Decision records** — If a change modifies behavior covered by an existing decision, update that decision or write a new one that supersedes it.
-3. **Plan docs** — Mark plans as `Complete` when done. If a plan is abandoned, set status to `Abandoned` with a brief reason.
+3. **Plan docs** — Follow the plan lifecycle above.
 
 ### Numbering
 
-Decision and plan IDs are sequential. Check the highest existing number in `docs/decisions/` or `docs/plans/` and increment by one.
+Decision and plan IDs are sequential. Check the highest existing number across `docs/decisions/`, `docs/plans/todo/`, and `docs/plans/complete/`, then increment by one.
