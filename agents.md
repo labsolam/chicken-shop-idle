@@ -57,13 +57,15 @@ Pure state machine. Engine functions are pure (`state => newState`). UI is a thi
 
 ## Design Decisions
 
-| ID  | File                                                   | Summary                                                |
-| --- | ------------------------------------------------------ | ------------------------------------------------------ |
-| 001 | `docs/decisions/001-tech-stack.md`                     | TypeScript + Vite + Vitest, vanilla DOM, no framework  |
-| 002 | `docs/decisions/002-money-as-cents.md`                 | All money as integer cents to avoid float bugs         |
-| 003 | `docs/decisions/003-pure-state-machine.md`             | Engine is pure functions, no side effects              |
-| 004 | `docs/decisions/004-static-analysis-and-formatting.md` | ESLint + Prettier + Husky pre-commit enforcement       |
-| 005 | `docs/decisions/005-ui-testing-strategy.md`            | happy-dom unit tests + Playwright e2e with screenshots |
+| ID  | File                                                   | Summary                                                 |
+| --- | ------------------------------------------------------ | ------------------------------------------------------- |
+| 001 | `docs/decisions/001-tech-stack.md`                     | TypeScript + Vite + Vitest, vanilla DOM, no framework   |
+| 002 | `docs/decisions/002-money-as-cents.md`                 | All money as integer cents to avoid float bugs          |
+| 003 | `docs/decisions/003-pure-state-machine.md`             | Engine is pure functions, no side effects               |
+| 004 | `docs/decisions/004-static-analysis-and-formatting.md` | ESLint + Prettier + Husky pre-commit enforcement        |
+| 005 | `docs/decisions/005-ui-testing-strategy.md`            | happy-dom unit tests + Playwright e2e with screenshots  |
+| 006 | `docs/decisions/006-persistence-and-offline.md`        | localStorage save + 8-hour offline earnings cap         |
+| 007 | `docs/decisions/007-github-pages-deploy.md`            | GitHub Pages deploy on merge to main via GitHub Actions |
 
 ## Plans
 
@@ -80,3 +82,51 @@ Pure state machine. Engine functions are pure (`state => newState`). UI is a thi
 - **Agent comments:** Use `AGENT CONTEXT:` prefix in JSDoc for comments aimed at agents.
 - **Return types:** All functions must have explicit return types (enforced by ESLint).
 - **Pre-commit:** Every commit is auto-formatted, linted, and tested. Commits fail if any check fails.
+
+## Keeping Docs Up to Date
+
+When you make changes to the codebase, update documentation **in the same commit**:
+
+### When to write a new decision record
+
+Add a new `docs/decisions/NNN-<slug>.md` when any of these happen:
+
+- A new library, tool, or service is introduced
+- An architectural pattern is established or changed
+- A non-obvious constraint is chosen (e.g. caps, limits, storage strategy)
+- An existing decision is reversed or superseded (set old status to `Superseded by NNN`)
+
+Use the template:
+
+```markdown
+# Decision NNN: Title
+
+**Status:** Accepted
+**Date:** YYYY-MM-DD
+
+## Context
+
+Why this decision is needed.
+
+## Decision
+
+What was decided.
+
+## Rationale
+
+Why this option over alternatives.
+
+## Consequences
+
+What follows from this decision — trade-offs, constraints, future work.
+```
+
+### After every change, review and update
+
+1. **This file (agents.md)** — Keep the Design Decisions table, Source Map, Test Map, and Conventions in sync with the current code.
+2. **Decision records** — If a change modifies behavior covered by an existing decision, update that decision or write a new one that supersedes it.
+3. **Plan docs** — Mark plans as `Complete` when done. If a plan is abandoned, set status to `Abandoned` with a brief reason.
+
+### Numbering
+
+Decision and plan IDs are sequential. Check the highest existing number in `docs/decisions/` or `docs/plans/` and increment by one.

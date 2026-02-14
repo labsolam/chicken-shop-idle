@@ -1,4 +1,4 @@
-# Decision 004: localStorage Persistence and Offline Earnings Cap
+# Decision 006: localStorage Persistence and Offline Earnings Cap
 
 **Status:** Accepted
 **Date:** 2026-02-14

@@ -1,4 +1,4 @@
-# Decision 005: GitHub Pages Deployment on Merge to Main
+# Decision 007: GitHub Pages Deployment on Merge to Main
 
 **Status:** Accepted
 **Date:** 2026-02-14
