@@ -30,30 +30,32 @@ Pure state machine. Engine functions are pure (`state => newState`). UI is a thi
 
 ## Source Map
 
-| Path                      | Purpose                                                             |
-| ------------------------- | ------------------------------------------------------------------- |
-| `eslint.config.js`        | ESLint flat config — strict TS rules + Prettier compat              |
-| `.prettierrc`             | Prettier formatting config                                          |
-| `.husky/pre-commit`       | Pre-commit hook — lint-staged then tests                            |
-| `playwright.config.ts`    | Playwright e2e config — auto-starts Vite, screenshots               |
-| `src/types/game-state.ts` | GameState interface and initial state factory                       |
-| `src/engine/tick.ts`      | Core tick function — advances time, cooks chickens                  |
-| `src/engine/sell.ts`      | Sell action — converts ready chickens to money                      |
-| `src/engine/save.ts`      | Pure serialize/deserialize for game state persistence               |
-| `src/engine/offline.ts`   | Offline earnings — auto-sells chickens produced while away (8h cap) |
-| `src/ui/render.ts`        | DOM renderer — reads state, updates elements, offline banner        |
-| `src/main.ts`             | Entry point — game loop, localStorage save/load, offline earnings   |
+| Path                      | Purpose                                                               |
+| ------------------------- | --------------------------------------------------------------------- |
+| `eslint.config.js`        | ESLint flat config — strict TS rules + Prettier compat                |
+| `.prettierrc`             | Prettier formatting config                                            |
+| `.husky/pre-commit`       | Pre-commit hook — lint-staged then tests                              |
+| `playwright.config.ts`    | Playwright e2e config — auto-starts Vite, screenshots                 |
+| `src/types/game-state.ts` | GameState interface and initial state factory                         |
+| `src/engine/tick.ts`      | Core tick function — advances time, cooks chickens                    |
+| `src/engine/sell.ts`      | Sell action — converts ready chickens to money (uses effective price) |
+| `src/engine/buy.ts`       | Upgrade system — costs, purchases, effective stat calculations        |
+| `src/engine/save.ts`      | Pure serialize/deserialize for game state persistence                 |
+| `src/engine/offline.ts`   | Offline earnings — auto-sells chickens produced while away (8h cap)   |
+| `src/ui/render.ts`        | DOM renderer — stats, upgrade buttons, offline banner                 |
+| `src/main.ts`             | Entry point — game loop, buy/sell events, save/load                   |
 
 ## Test Map
 
-| Path                           | Covers                                                                  |
-| ------------------------------ | ----------------------------------------------------------------------- |
-| `tests/engine/tick.test.ts`    | tick() — cooking progress, production, offline catch-up, immutability   |
-| `tests/engine/sell.test.ts`    | sellChickens() — earnings, no-op when empty, immutability               |
-| `tests/engine/save.test.ts`    | serializeState/deserializeState — round-trip, validation, edge cases    |
-| `tests/engine/offline.test.ts` | calculateOfflineEarnings — production, auto-sell, 8h cap, immutability  |
-| `tests/ui/render.test.ts`      | render() + showOfflineBanner() — formatting, banner display (happy-dom) |
-| `e2e/game.spec.ts`             | Full browser: initial state, cooking, selling, screenshots (Playwright) |
+| Path                           | Covers                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------- |
+| `tests/engine/tick.test.ts`    | tick() — cooking progress, production, offline catch-up, immutability     |
+| `tests/engine/sell.test.ts`    | sellChickens() — earnings, no-op when empty, immutability                 |
+| `tests/engine/buy.test.ts`     | buyUpgrade, getUpgradeCost, effective stats, immutability                 |
+| `tests/engine/save.test.ts`    | serializeState/deserializeState — round-trip, validation, old save compat |
+| `tests/engine/offline.test.ts` | calculateOfflineEarnings — production, auto-sell, 8h cap, immutability    |
+| `tests/ui/render.test.ts`      | render() + showOfflineBanner() — formatting, banner display (happy-dom)   |
+| `e2e/game.spec.ts`             | Full browser: initial state, cooking, selling, screenshots (Playwright)   |
 
 ## Design Decisions
 
@@ -66,6 +68,7 @@ Pure state machine. Engine functions are pure (`state => newState`). UI is a thi
 | 005 | `docs/decisions/005-ui-testing-strategy.md`            | happy-dom unit tests + Playwright e2e with screenshots  |
 | 006 | `docs/decisions/006-persistence-and-offline.md`        | localStorage save + 8-hour offline earnings cap         |
 | 007 | `docs/decisions/007-github-pages-deploy.md`            | GitHub Pages deploy on merge to main via GitHub Actions |
+| 008 | `docs/decisions/008-buy-upgrades.md`                   | Two purchasable upgrades with exponential cost scaling  |
 
 ## Plans
 
@@ -74,9 +77,10 @@ Plans live in two directories based on status:
 - **`docs/plans/todo/`** — Active and upcoming plans
 - **`docs/plans/complete/`** — Finished plans (moved here when done)
 
-| ID  | File                                          | Status   | Summary                               |
-| --- | --------------------------------------------- | -------- | ------------------------------------- |
-| 001 | `docs/plans/complete/001-initial-scaffold.md` | Complete | Project setup, core loop, tests, docs |
+| ID  | File                                          | Status   | Summary                                     |
+| --- | --------------------------------------------- | -------- | ------------------------------------------- |
+| 001 | `docs/plans/complete/001-initial-scaffold.md` | Complete | Project setup, core loop, tests, docs       |
+| 002 | `docs/plans/complete/002-buy-upgrades.md`     | Complete | Buy upgrades for cook speed + chicken value |
 
 ## Conventions
 

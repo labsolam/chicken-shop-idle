@@ -34,6 +34,8 @@ describe("deserializeState", () => {
       chickenPriceInCents: 100,
       shopOpen: true,
       lastUpdateTimestamp: 1700000000000,
+      cookSpeedLevel: 2,
+      chickenValueLevel: 3,
     };
     const json = serializeState(original);
     const restored = deserializeState(json);
@@ -65,6 +67,23 @@ describe("deserializeState", () => {
       lastUpdateTimestamp: 0,
     };
     expect(deserializeState(JSON.stringify(bad))).toBeNull();
+  });
+
+  it("defaults missing upgrade levels to 0 (old save compat)", () => {
+    const oldSave = {
+      money: 1000,
+      totalChickensCooked: 10,
+      chickensReady: 2,
+      cookingProgress: 0.5,
+      cookTimeSeconds: 5,
+      chickenPriceInCents: 100,
+      shopOpen: true,
+      lastUpdateTimestamp: 1700000000000,
+    };
+    const restored = deserializeState(JSON.stringify(oldSave));
+    expect(restored).not.toBeNull();
+    expect(restored?.cookSpeedLevel).toBe(0);
+    expect(restored?.chickenValueLevel).toBe(0);
   });
 
   it("ignores extra fields in JSON", () => {

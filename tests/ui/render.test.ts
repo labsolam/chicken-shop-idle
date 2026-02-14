@@ -17,6 +17,12 @@ function setupDOM(): void {
     <span id="cooking-progress"></span>
     <span id="total-cooked"></span>
     <div id="offline-banner" style="display: none;"></div>
+    <span id="cook-speed-level"></span>
+    <span id="cook-speed-cost"></span>
+    <button id="buy-cook-speed"></button>
+    <span id="chicken-value-level"></span>
+    <span id="chicken-value-cost"></span>
+    <button id="buy-chicken-value"></button>
   `;
 }
 
@@ -72,6 +78,42 @@ describe("render", () => {
   it("does not throw when DOM elements are missing", () => {
     document.body.innerHTML = "";
     expect(() => render(stateWith({}))).not.toThrow();
+  });
+
+  it("displays upgrade levels", () => {
+    render(stateWith({ cookSpeedLevel: 3, chickenValueLevel: 5 }));
+    expect(getText("cook-speed-level")).toBe("Lv 3");
+    expect(getText("chicken-value-level")).toBe("Lv 5");
+  });
+
+  it("displays upgrade costs", () => {
+    render(stateWith({ cookSpeedLevel: 0, chickenValueLevel: 0 }));
+    expect(getText("cook-speed-cost")).toBe("$5.00");
+    expect(getText("chicken-value-cost")).toBe("$5.00");
+  });
+
+  it("disables buy buttons when money is insufficient", () => {
+    render(stateWith({ money: 0, cookSpeedLevel: 0, chickenValueLevel: 0 }));
+    const cookBtn = document.getElementById(
+      "buy-cook-speed",
+    ) as HTMLButtonElement;
+    const valueBtn = document.getElementById(
+      "buy-chicken-value",
+    ) as HTMLButtonElement;
+    expect(cookBtn.disabled).toBe(true);
+    expect(valueBtn.disabled).toBe(true);
+  });
+
+  it("enables buy buttons when money is sufficient", () => {
+    render(stateWith({ money: 500, cookSpeedLevel: 0, chickenValueLevel: 0 }));
+    const cookBtn = document.getElementById(
+      "buy-cook-speed",
+    ) as HTMLButtonElement;
+    const valueBtn = document.getElementById(
+      "buy-chicken-value",
+    ) as HTMLButtonElement;
+    expect(cookBtn.disabled).toBe(false);
+    expect(valueBtn.disabled).toBe(false);
   });
 });
 

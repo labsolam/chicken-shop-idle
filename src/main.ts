@@ -1,6 +1,7 @@
 import { createInitialState, GameState } from "./types/game-state";
 import { tick } from "./engine/tick";
 import { sellChickens } from "./engine/sell";
+import { buyUpgrade } from "./engine/buy";
 import { serializeState, deserializeState } from "./engine/save";
 import { calculateOfflineEarnings, OfflineResult } from "./engine/offline";
 import { render, showOfflineBanner } from "./ui/render";
@@ -66,6 +67,22 @@ function onSellClick(): void {
 const sellButton = document.getElementById("sell-button");
 if (sellButton) {
   sellButton.addEventListener("click", onSellClick);
+}
+
+const buyCookSpeedButton = document.getElementById("buy-cook-speed");
+if (buyCookSpeedButton) {
+  buyCookSpeedButton.addEventListener("click", () => {
+    state = buyUpgrade(state, "cookSpeed");
+    render(state);
+  });
+}
+
+const buyChickenValueButton = document.getElementById("buy-chicken-value");
+if (buyChickenValueButton) {
+  buyChickenValueButton.addEventListener("click", () => {
+    state = buyUpgrade(state, "chickenValue");
+    render(state);
+  });
 }
 
 // --- Persistence ---
