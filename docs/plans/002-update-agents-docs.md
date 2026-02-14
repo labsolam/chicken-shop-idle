@@ -28,7 +28,7 @@ Add undocumented config/build files and commands to agents.md so the navigation 
 ## Steps
 
 - [x] Audit codebase against current agents.md
-- [ ] Add 5 config/build files to Source Map
-- [ ] Add `prepare` script to Commands table
-- [ ] Update Plans table to reference this plan
+- [x] Add 5 config/build files to Source Map
+- [x] Add `prepare` script to Commands table
+- [x] Update Plans table to reference this plan
 - [ ] Commit changes
