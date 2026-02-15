@@ -145,7 +145,7 @@ What follows from this decision — trade-offs, constraints, future work.
 
 1. **Create** — New plans go in `docs/plans/todo/NNN-<slug>.md` with status `Todo`.
 2. **Work** — Set status to `In Progress` when you start. Check off steps as you go.
-3. **Complete** — When all steps are done, set status to `Complete`, add an `## Outcome` section, then move the file to `docs/plans/complete/`.
+3. **Complete** — When all steps are done, set status to `Complete`, add an `## Outcome` section, then move the file to `docs/plans/complete/`. Moving the plan must be the **last commit** on the branch — a dedicated commit that only moves the plan file and updates the Plans table in this file.
 4. **Abandon** — If a plan is dropped, set status to `Abandoned` with a brief reason, then move to `docs/plans/complete/` (it's still a historical record).
 
 Always update the Plans table in this file (agents.md) when a plan changes directory or status.
