@@ -23,6 +23,7 @@ Chicken Shop Idle — a browser-based idle game where you run a chicken shop.
 | Full check      | `npm run check`           |
 | E2E tests       | `npm run test:e2e`        |
 | E2E (headed)    | `npm run test:e2e:headed` |
+| Prepare (Husky) | `npm run prepare`         |
 
 ## Architecture
 
@@ -44,6 +45,11 @@ Pure state machine. Engine functions are pure (`state => newState`). UI is a thi
 | `src/engine/offline.ts`   | Offline earnings — auto-sells chickens produced while away (8h cap)   |
 | `src/ui/render.ts`        | DOM renderer — stats, upgrade buttons, offline banner                 |
 | `src/main.ts`             | Entry point — game loop, buy/sell events, save/load                   |
+| `tsconfig.json`           | TypeScript config — strict mode, path aliases (@engine, @ui, @types)  |
+| `vite.config.ts`          | Vite build config — sets `/chicken-shop-idle/` base for GitHub Pages  |
+| `vitest.config.ts`        | Vitest config — path aliases, test include pattern                    |
+| `index.html`              | HTML entry point — game UI shell, inline styles, module script        |
+| `.github/workflows/deploy.yml` | GitHub Actions — build + deploy to GitHub Pages on push to main  |
 
 ## Test Map
 
@@ -77,10 +83,11 @@ Plans live in two directories based on status:
 - **`docs/plans/todo/`** — Active and upcoming plans
 - **`docs/plans/complete/`** — Finished plans (moved here when done)
 
-| ID  | File                                          | Status   | Summary                                     |
-| --- | --------------------------------------------- | -------- | ------------------------------------------- |
-| 001 | `docs/plans/complete/001-initial-scaffold.md` | Complete | Project setup, core loop, tests, docs       |
-| 002 | `docs/plans/complete/002-buy-upgrades.md`     | Complete | Buy upgrades for cook speed + chicken value |
+| ID  | File                                          | Status      | Summary                                          |
+| --- | --------------------------------------------- | ----------- | ------------------------------------------------ |
+| 001 | `docs/plans/complete/001-initial-scaffold.md` | Complete    | Project setup, core loop, tests, docs            |
+| 002 | `docs/plans/complete/002-buy-upgrades.md`     | Complete    | Buy upgrades for cook speed + chicken value      |
+| 003 | `docs/plans/complete/003-update-agents-docs.md` | Complete  | Add missing config files and commands to map      |
 
 ## Conventions
 
@@ -91,6 +98,7 @@ Plans live in two directories based on status:
 - **Agent comments:** Use `AGENT CONTEXT:` prefix in JSDoc for comments aimed at agents.
 - **Return types:** All functions must have explicit return types (enforced by ESLint).
 - **Pre-commit:** Every commit is auto-formatted, linted, and tested. Commits fail if any check fails.
+- **Default branch:** `main`. Always branch from and merge into `main`.
 
 ## Keeping Docs Up to Date
 
