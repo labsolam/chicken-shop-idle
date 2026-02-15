@@ -2,6 +2,7 @@ import { createInitialState, GameState } from "./types/game-state";
 import { tick } from "./engine/tick";
 import { sellChickens } from "./engine/sell";
 import { buyUpgrade } from "./engine/buy";
+import { clickCook } from "./engine/click";
 import { serializeState, deserializeState } from "./engine/save";
 import { calculateOfflineEarnings, OfflineResult } from "./engine/offline";
 import { render, showOfflineBanner } from "./ui/render";
@@ -62,6 +63,14 @@ function gameLoop(currentTime: number): void {
 function onSellClick(): void {
   state = sellChickens(state);
   render(state);
+}
+
+const cookButton = document.getElementById("cook-button");
+if (cookButton) {
+  cookButton.addEventListener("click", () => {
+    state = clickCook(state);
+    render(state);
+  });
 }
 
 const sellButton = document.getElementById("sell-button");

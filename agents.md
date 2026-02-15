@@ -31,25 +31,26 @@ Pure state machine. Engine functions are pure (`state => newState`). UI is a thi
 
 ## Source Map
 
-| Path                      | Purpose                                                               |
-| ------------------------- | --------------------------------------------------------------------- |
-| `eslint.config.js`        | ESLint flat config — strict TS rules + Prettier compat                |
-| `.prettierrc`             | Prettier formatting config                                            |
-| `.husky/pre-commit`       | Pre-commit hook — lint-staged then tests                              |
-| `playwright.config.ts`    | Playwright e2e config — auto-starts Vite, screenshots                 |
-| `src/types/game-state.ts` | GameState interface and initial state factory                         |
-| `src/engine/tick.ts`      | Core tick function — advances time, cooks chickens                    |
-| `src/engine/sell.ts`      | Sell action — converts ready chickens to money (uses effective price) |
-| `src/engine/buy.ts`       | Upgrade system — costs, purchases, effective stat calculations        |
-| `src/engine/save.ts`      | Pure serialize/deserialize for game state persistence                 |
-| `src/engine/offline.ts`   | Offline earnings — auto-sells chickens produced while away (8h cap)   |
-| `src/ui/render.ts`        | DOM renderer — stats, upgrade buttons, offline banner                 |
-| `src/main.ts`             | Entry point — game loop, buy/sell events, save/load                   |
-| `tsconfig.json`           | TypeScript config — strict mode, path aliases (@engine, @ui, @types)  |
-| `vite.config.ts`          | Vite build config — sets `/chicken-shop-idle/` base for GitHub Pages  |
-| `vitest.config.ts`        | Vitest config — path aliases, test include pattern                    |
-| `index.html`              | HTML entry point — game UI shell, inline styles, module script        |
-| `.github/workflows/deploy.yml` | GitHub Actions — build + deploy to GitHub Pages on push to main  |
+| Path                           | Purpose                                                               |
+| ------------------------------ | --------------------------------------------------------------------- |
+| `eslint.config.js`             | ESLint flat config — strict TS rules + Prettier compat                |
+| `.prettierrc`                  | Prettier formatting config                                            |
+| `.husky/pre-commit`            | Pre-commit hook — lint-staged then tests                              |
+| `playwright.config.ts`         | Playwright e2e config — auto-starts Vite, screenshots                 |
+| `src/types/game-state.ts`      | GameState interface and initial state factory                         |
+| `src/engine/tick.ts`           | Core tick function — advances time, cooks chickens                    |
+| `src/engine/sell.ts`           | Sell action — converts ready chickens to money (uses effective price) |
+| `src/engine/buy.ts`            | Upgrade system — costs, purchases, effective stat calculations        |
+| `src/engine/click.ts`          | Click-to-cook action — instantly produces 1 chicken per click         |
+| `src/engine/save.ts`           | Pure serialize/deserialize for game state persistence                 |
+| `src/engine/offline.ts`        | Offline earnings — auto-sells chickens produced while away (8h cap)   |
+| `src/ui/render.ts`             | DOM renderer — stats, upgrade buttons, offline banner                 |
+| `src/main.ts`                  | Entry point — game loop, cook/buy/sell events, save/load              |
+| `tsconfig.json`                | TypeScript config — strict mode, path aliases (@engine, @ui, @types)  |
+| `vite.config.ts`               | Vite build config — sets `/chicken-shop-idle/` base for GitHub Pages  |
+| `vitest.config.ts`             | Vitest config — path aliases, test include pattern                    |
+| `index.html`                   | HTML entry point — game UI shell, inline styles, module script        |
+| `.github/workflows/deploy.yml` | GitHub Actions — build + deploy to GitHub Pages on push to main       |
 
 ## Test Map
 
@@ -57,6 +58,7 @@ Pure state machine. Engine functions are pure (`state => newState`). UI is a thi
 | ------------------------------ | ------------------------------------------------------------------------- |
 | `tests/engine/tick.test.ts`    | tick() — cooking progress, production, offline catch-up, immutability     |
 | `tests/engine/sell.test.ts`    | sellChickens() — earnings, no-op when empty, immutability                 |
+| `tests/engine/click.test.ts`   | clickCook() — instant cook, counter increment, immutability               |
 | `tests/engine/buy.test.ts`     | buyUpgrade, getUpgradeCost, effective stats, immutability                 |
 | `tests/engine/save.test.ts`    | serializeState/deserializeState — round-trip, validation, old save compat |
 | `tests/engine/offline.test.ts` | calculateOfflineEarnings — production, auto-sell, 8h cap, immutability    |
@@ -83,11 +85,12 @@ Plans live in two directories based on status:
 - **`docs/plans/todo/`** — Active and upcoming plans
 - **`docs/plans/complete/`** — Finished plans (moved here when done)
 
-| ID  | File                                          | Status      | Summary                                          |
-| --- | --------------------------------------------- | ----------- | ------------------------------------------------ |
-| 001 | `docs/plans/complete/001-initial-scaffold.md` | Complete    | Project setup, core loop, tests, docs            |
-| 002 | `docs/plans/complete/002-buy-upgrades.md`     | Complete    | Buy upgrades for cook speed + chicken value      |
-| 003 | `docs/plans/complete/003-update-agents-docs.md` | Complete  | Add missing config files and commands to map      |
+| ID  | File                                            | Status      | Summary                                      |
+| --- | ----------------------------------------------- | ----------- | -------------------------------------------- |
+| 001 | `docs/plans/complete/001-initial-scaffold.md`   | Complete    | Project setup, core loop, tests, docs        |
+| 002 | `docs/plans/complete/002-buy-upgrades.md`       | Complete    | Buy upgrades for cook speed + chicken value  |
+| 003 | `docs/plans/complete/003-update-agents-docs.md` | Complete    | Add missing config files and commands to map |
+| 004 | `docs/plans/todo/004-click-to-cook.md`          | In Progress | Click-to-cook clicker button                 |
 
 ## Conventions
 
