@@ -1,6 +1,6 @@
 # Plan 004: Click-to-Cook Clicker Button
 
-**Status:** In Progress
+**Status:** Complete
 **Date:** 2026-02-15
 
 ## Goal
@@ -12,6 +12,7 @@ Add a clicker button that lets players manually cook chickens by clicking. Each 
 ### 1. New engine function `src/engine/click.ts`
 
 Pure function `clickCook(state) => newState` that:
+
 - Adds 1 to `chickensReady`
 - Adds 1 to `totalChickensCooked`
 - Does NOT affect `cookingProgress` (auto-cooking continues independently)
@@ -32,9 +33,13 @@ Add event listener for the cook button that calls `clickCook`.
 
 ## Steps
 
-- [ ] Write failing tests for clickCook (TDD red phase)
-- [ ] Implement clickCook engine function (TDD green phase)
-- [ ] Add cook button to index.html
-- [ ] Wire click event in main.ts
-- [ ] Update agents.md
-- [ ] Run full check and commit
+- [x] Write failing tests for clickCook (TDD red phase)
+- [x] Implement clickCook engine function (TDD green phase)
+- [x] Add cook button to index.html
+- [x] Wire click event in main.ts
+- [x] Update agents.md
+- [x] Run full check and commit
+
+## Outcome
+
+Implemented `clickCook()` in `src/engine/click.ts` with 5 unit tests. "Cook Chicken" button wired in `index.html` and `src/main.ts`. All 65 tests passing, lint and format clean.

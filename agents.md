@@ -85,12 +85,12 @@ Plans live in two directories based on status:
 - **`docs/plans/todo/`** — Active and upcoming plans
 - **`docs/plans/complete/`** — Finished plans (moved here when done)
 
-| ID  | File                                            | Status      | Summary                                      |
-| --- | ----------------------------------------------- | ----------- | -------------------------------------------- |
-| 001 | `docs/plans/complete/001-initial-scaffold.md`   | Complete    | Project setup, core loop, tests, docs        |
-| 002 | `docs/plans/complete/002-buy-upgrades.md`       | Complete    | Buy upgrades for cook speed + chicken value  |
-| 003 | `docs/plans/complete/003-update-agents-docs.md` | Complete    | Add missing config files and commands to map |
-| 004 | `docs/plans/todo/004-click-to-cook.md`          | In Progress | Click-to-cook clicker button                 |
+| ID  | File                                            | Status   | Summary                                      |
+| --- | ----------------------------------------------- | -------- | -------------------------------------------- |
+| 001 | `docs/plans/complete/001-initial-scaffold.md`   | Complete | Project setup, core loop, tests, docs        |
+| 002 | `docs/plans/complete/002-buy-upgrades.md`       | Complete | Buy upgrades for cook speed + chicken value  |
+| 003 | `docs/plans/complete/003-update-agents-docs.md` | Complete | Add missing config files and commands to map |
+| 004 | `docs/plans/complete/004-click-to-cook.md`      | Complete | Click-to-cook clicker button                 |
 
 ## Conventions
 
