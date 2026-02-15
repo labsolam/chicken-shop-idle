@@ -1,6 +1,6 @@
 # Decision 007: GitHub Pages Deployment on Merge to Main
 
-**Status:** Accepted
+**Status:** Superseded by 009
 **Date:** 2026-02-14
 
 ## Context
