@@ -16,6 +16,12 @@ const STATE_FIELDS: Array<{ key: keyof GameState; type: string }> = [
   { key: "lastUpdateTimestamp", type: "number" },
 ];
 
+/** Fields added after initial release. Missing values default to 0. */
+const OPTIONAL_NUMBER_FIELDS: Array<keyof GameState> = [
+  "cookSpeedLevel",
+  "chickenValueLevel",
+];
+
 export function serializeState(state: GameState): string {
   return JSON.stringify(state);
 }
@@ -40,6 +46,12 @@ export function deserializeState(json: string): GameState | null {
     }
   }
 
+  for (const key of OPTIONAL_NUMBER_FIELDS) {
+    if (obj[key] !== undefined && typeof obj[key] !== "number") {
+      return null;
+    }
+  }
+
   return {
     money: obj.money as number,
     totalChickensCooked: obj.totalChickensCooked as number,
@@ -49,5 +61,7 @@ export function deserializeState(json: string): GameState | null {
     chickenPriceInCents: obj.chickenPriceInCents as number,
     shopOpen: obj.shopOpen as boolean,
     lastUpdateTimestamp: obj.lastUpdateTimestamp as number,
+    cookSpeedLevel: (obj.cookSpeedLevel as number) ?? 0,
+    chickenValueLevel: (obj.chickenValueLevel as number) ?? 0,
   };
 }

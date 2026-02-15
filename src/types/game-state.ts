@@ -28,6 +28,12 @@ export interface GameState {
 
   /** Timestamp of last update (ms since epoch), used for offline progress */
   lastUpdateTimestamp: number;
+
+  /** Current cook-speed upgrade level (0 = no upgrades bought) */
+  cookSpeedLevel: number;
+
+  /** Current chicken-value upgrade level (0 = no upgrades bought) */
+  chickenValueLevel: number;
 }
 
 export function createInitialState(): GameState {
@@ -40,5 +46,7 @@ export function createInitialState(): GameState {
     chickenPriceInCents: 100,
     shopOpen: true,
     lastUpdateTimestamp: Date.now(),
+    cookSpeedLevel: 0,
+    chickenValueLevel: 0,
   };
 }

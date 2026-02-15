@@ -6,6 +6,7 @@
 ## Goal
 
 Set up project from empty repo to a runnable idle game with:
+
 - Working build toolchain
 - Core game loop (cooking chickens over time)
 - Sell action (convert chickens to money)

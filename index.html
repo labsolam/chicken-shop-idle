@@ -26,7 +26,7 @@
         color: #fff;
         font-weight: bold;
       }
-      #sell-button {
+      .action-button {
         margin-top: 16px;
         padding: 12px 24px;
         font-size: 16px;
@@ -37,8 +37,36 @@
         font-family: monospace;
         font-weight: bold;
       }
-      #sell-button:hover {
+      .action-button:hover {
         background: #e6951a;
+      }
+      .action-button:disabled {
+        background: #555;
+        color: #888;
+        cursor: not-allowed;
+      }
+      .upgrades {
+        margin-top: 24px;
+        border-top: 1px solid #333;
+        padding-top: 16px;
+      }
+      .upgrades h2 {
+        color: #f5a623;
+        font-size: 16px;
+        margin: 0 0 12px;
+      }
+      .upgrade-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 8px 0;
+      }
+      .upgrade-info {
+        flex: 1;
+      }
+      .upgrade-level {
+        color: #888;
+        font-size: 12px;
       }
       #offline-banner {
         display: none;
@@ -71,7 +99,33 @@
       <span class="value" id="total-cooked">0</span>
     </div>
 
-    <button id="sell-button">Sell Chickens</button>
+    <button id="sell-button" class="action-button">Sell Chickens</button>
+
+    <div class="upgrades">
+      <h2>Upgrades</h2>
+      <div class="upgrade-row">
+        <div class="upgrade-info">
+          <div>
+            Faster Cooking
+            <span class="upgrade-level" id="cook-speed-level">Lv 0</span>
+          </div>
+        </div>
+        <button id="buy-cook-speed" class="action-button">
+          Buy - <span id="cook-speed-cost">$5.00</span>
+        </button>
+      </div>
+      <div class="upgrade-row">
+        <div class="upgrade-info">
+          <div>
+            Better Chicken
+            <span class="upgrade-level" id="chicken-value-level">Lv 0</span>
+          </div>
+        </div>
+        <button id="buy-chicken-value" class="action-button">
+          Buy - <span id="chicken-value-cost">$5.00</span>
+        </button>
+      </div>
+    </div>
 
     <script type="module" src="/src/main.ts"></script>
   </body>
