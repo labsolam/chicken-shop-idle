@@ -1,4 +1,4 @@
-# Plan 002: Update agents.md with Missing Items
+# Plan 003: Update agents.md with Missing Items
 
 **Status:** In Progress
 **Date:** 2026-02-14
