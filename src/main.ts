@@ -18,7 +18,13 @@ const SAVE_KEY = "chicken-shop-idle-save";
 const AUTO_SAVE_INTERVAL_MS = 30_000;
 
 function loadOrCreate(): { state: GameState; offline: OfflineResult | null } {
-  const json = localStorage.getItem(SAVE_KEY);
+  let json: string | null;
+  try {
+    json = localStorage.getItem(SAVE_KEY);
+  } catch {
+    return { state: createInitialState(), offline: null };
+  }
+
   if (!json) {
     return { state: createInitialState(), offline: null };
   }
@@ -33,7 +39,11 @@ function loadOrCreate(): { state: GameState; offline: OfflineResult | null } {
 }
 
 function saveGame(state: GameState): void {
-  localStorage.setItem(SAVE_KEY, serializeState(state));
+  try {
+    localStorage.setItem(SAVE_KEY, serializeState(state));
+  } catch {
+    // Storage unavailable (private browsing, sandboxed iframe, etc.)
+  }
 }
 
 // --- Initialize ---
