@@ -2,9 +2,6 @@ import { defineConfig } from "vite";
 
 /**
  * AGENT CONTEXT: Vite build config.
- * Sets base path for GitHub Pages deployment.
- * Dev server uses "/" (default); production build uses repo name as base.
+ * Vercel serves at root "/", so no custom base path is needed.
  */
-export default defineConfig({
-  base: "/chicken-shop-idle/",
-});
+export default defineConfig({});

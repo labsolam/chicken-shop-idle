@@ -31,27 +31,26 @@ Pure state machine. Engine functions are pure (`state => newState`). UI is a thi
 
 ## Source Map
 
-| Path                           | Purpose                                                               |
-| ------------------------------ | --------------------------------------------------------------------- |
-| `eslint.config.js`             | ESLint flat config — strict TS rules + Prettier compat                |
-| `.prettierrc`                  | Prettier formatting config                                            |
-| `.husky/pre-commit`            | Pre-commit hook — lint-staged then tests                              |
-| `playwright.config.ts`         | Playwright e2e config — auto-starts Vite, screenshots                 |
-| `src/types/game-state.ts`      | GameState interface and initial state factory                         |
-| `src/engine/tick.ts`           | Core tick function — advances time, cooks chickens                    |
-| `src/engine/sell.ts`           | Sell action — converts ready chickens to money (uses effective price) |
-| `src/engine/buy.ts`            | Upgrade system — costs, purchases, effective stat calculations        |
-| `src/engine/click.ts`          | Click-to-cook action — instantly produces 1 chicken per click         |
-| `src/engine/save.ts`           | Pure serialize/deserialize for game state persistence                 |
-| `src/engine/offline.ts`        | Offline earnings — auto-sells chickens produced while away (8h cap)   |
-| `src/ui/render.ts`             | DOM renderer — stats, upgrade buttons, offline banner                 |
-| `src/main.ts`                  | Entry point — game loop, cook/buy/sell events, save/load              |
-| `tsconfig.json`                | TypeScript config — strict mode, path aliases (@engine, @ui, @types)  |
-| `vite.config.ts`               | Vite build config — sets `/chicken-shop-idle/` base for GitHub Pages  |
-| `vitest.config.ts`             | Vitest config — path aliases, test include pattern                    |
-| `index.html`                   | HTML entry point — game UI shell, inline styles, module script        |
-| `CLAUDE.md`                    | Claude Code auto-loaded config — points agents to agents.md           |
-| `.github/workflows/deploy.yml` | GitHub Actions — build + deploy to GitHub Pages on push to main       |
+| Path                      | Purpose                                                               |
+| ------------------------- | --------------------------------------------------------------------- |
+| `eslint.config.js`        | ESLint flat config — strict TS rules + Prettier compat                |
+| `.prettierrc`             | Prettier formatting config                                            |
+| `.husky/pre-commit`       | Pre-commit hook — lint-staged then tests                              |
+| `playwright.config.ts`    | Playwright e2e config — auto-starts Vite, screenshots                 |
+| `src/types/game-state.ts` | GameState interface and initial state factory                         |
+| `src/engine/tick.ts`      | Core tick function — advances time, cooks chickens                    |
+| `src/engine/sell.ts`      | Sell action — converts ready chickens to money (uses effective price) |
+| `src/engine/buy.ts`       | Upgrade system — costs, purchases, effective stat calculations        |
+| `src/engine/click.ts`     | Click-to-cook action — instantly produces 1 chicken per click         |
+| `src/engine/save.ts`      | Pure serialize/deserialize for game state persistence                 |
+| `src/engine/offline.ts`   | Offline earnings — auto-sells chickens produced while away (8h cap)   |
+| `src/ui/render.ts`        | DOM renderer — stats, upgrade buttons, offline banner                 |
+| `src/main.ts`             | Entry point — game loop, cook/buy/sell events, save/load              |
+| `tsconfig.json`           | TypeScript config — strict mode, path aliases (@engine, @ui, @types)  |
+| `vite.config.ts`          | Vite build config — default settings, serves at root `/` for Vercel   |
+| `vitest.config.ts`        | Vitest config — path aliases, test include pattern                    |
+| `index.html`              | HTML entry point — game UI shell, inline styles, module script        |
+| `CLAUDE.md`               | Claude Code auto-loaded config — points agents to agents.md           |
 
 ## Test Map
 
@@ -68,16 +67,17 @@ Pure state machine. Engine functions are pure (`state => newState`). UI is a thi
 
 ## Design Decisions
 
-| ID  | File                                                   | Summary                                                 |
-| --- | ------------------------------------------------------ | ------------------------------------------------------- |
-| 001 | `docs/decisions/001-tech-stack.md`                     | TypeScript + Vite + Vitest, vanilla DOM, no framework   |
-| 002 | `docs/decisions/002-money-as-cents.md`                 | All money as integer cents to avoid float bugs          |
-| 003 | `docs/decisions/003-pure-state-machine.md`             | Engine is pure functions, no side effects               |
-| 004 | `docs/decisions/004-static-analysis-and-formatting.md` | ESLint + Prettier + Husky pre-commit enforcement        |
-| 005 | `docs/decisions/005-ui-testing-strategy.md`            | happy-dom unit tests + Playwright e2e with screenshots  |
-| 006 | `docs/decisions/006-persistence-and-offline.md`        | localStorage save + 8-hour offline earnings cap         |
-| 007 | `docs/decisions/007-github-pages-deploy.md`            | GitHub Pages deploy on merge to main via GitHub Actions |
-| 008 | `docs/decisions/008-buy-upgrades.md`                   | Two purchasable upgrades with exponential cost scaling  |
+| ID  | File                                                   | Summary                                                |
+| --- | ------------------------------------------------------ | ------------------------------------------------------ |
+| 001 | `docs/decisions/001-tech-stack.md`                     | TypeScript + Vite + Vitest, vanilla DOM, no framework  |
+| 002 | `docs/decisions/002-money-as-cents.md`                 | All money as integer cents to avoid float bugs         |
+| 003 | `docs/decisions/003-pure-state-machine.md`             | Engine is pure functions, no side effects              |
+| 004 | `docs/decisions/004-static-analysis-and-formatting.md` | ESLint + Prettier + Husky pre-commit enforcement       |
+| 005 | `docs/decisions/005-ui-testing-strategy.md`            | happy-dom unit tests + Playwright e2e with screenshots |
+| 006 | `docs/decisions/006-persistence-and-offline.md`        | localStorage save + 8-hour offline earnings cap        |
+| 007 | `docs/decisions/007-github-pages-deploy.md`            | ~~GitHub Pages deploy~~ Superseded by 009              |
+| 008 | `docs/decisions/008-buy-upgrades.md`                   | Two purchasable upgrades with exponential cost scaling |
+| 009 | `docs/decisions/009-vercel-deploy.md`                  | Vercel deployment — auto-detect Vite, preview deploys  |
 
 ## Plans
 
@@ -86,12 +86,13 @@ Plans live in two directories based on status:
 - **`docs/plans/todo/`** — Active and upcoming plans
 - **`docs/plans/complete/`** — Finished plans (moved here when done)
 
-| ID  | File                                            | Status   | Summary                                      |
-| --- | ----------------------------------------------- | -------- | -------------------------------------------- |
-| 001 | `docs/plans/complete/001-initial-scaffold.md`   | Complete | Project setup, core loop, tests, docs        |
-| 002 | `docs/plans/complete/002-buy-upgrades.md`       | Complete | Buy upgrades for cook speed + chicken value  |
-| 003 | `docs/plans/complete/003-update-agents-docs.md` | Complete | Add missing config files and commands to map |
-| 004 | `docs/plans/complete/004-click-to-cook.md`      | Complete | Click-to-cook clicker button                 |
+| ID  | File                                            | Status      | Summary                                      |
+| --- | ----------------------------------------------- | ----------- | -------------------------------------------- |
+| 001 | `docs/plans/complete/001-initial-scaffold.md`   | Complete    | Project setup, core loop, tests, docs        |
+| 002 | `docs/plans/complete/002-buy-upgrades.md`       | Complete    | Buy upgrades for cook speed + chicken value  |
+| 003 | `docs/plans/complete/003-update-agents-docs.md` | Complete    | Add missing config files and commands to map |
+| 004 | `docs/plans/complete/004-click-to-cook.md`      | Complete    | Click-to-cook clicker button                 |
+| 005 | `docs/plans/todo/005-migrate-to-vercel.md`      | In Progress | Migrate deploy from GitHub Pages to Vercel   |
 
 ## Conventions
 
