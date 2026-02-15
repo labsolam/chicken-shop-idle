@@ -50,20 +50,21 @@ Pure state machine. Engine functions are pure (`state => newState`). UI is a thi
 | `vite.config.ts`               | Vite build config — sets `/chicken-shop-idle/` base for GitHub Pages  |
 | `vitest.config.ts`             | Vitest config — path aliases, test include pattern                    |
 | `index.html`                   | HTML entry point — game UI shell, inline styles, module script        |
+| `CLAUDE.md`                    | Claude Code auto-loaded config — points agents to agents.md           |
 | `.github/workflows/deploy.yml` | GitHub Actions — build + deploy to GitHub Pages on push to main       |
 
 ## Test Map
 
-| Path                           | Covers                                                                    |
-| ------------------------------ | ------------------------------------------------------------------------- |
-| `tests/engine/tick.test.ts`    | tick() — cooking progress, production, offline catch-up, immutability     |
-| `tests/engine/sell.test.ts`    | sellChickens() — earnings, no-op when empty, immutability                 |
-| `tests/engine/click.test.ts`   | clickCook() — instant cook, counter increment, immutability               |
-| `tests/engine/buy.test.ts`     | buyUpgrade, getUpgradeCost, effective stats, immutability                 |
-| `tests/engine/save.test.ts`    | serializeState/deserializeState — round-trip, validation, old save compat |
-| `tests/engine/offline.test.ts` | calculateOfflineEarnings — production, auto-sell, 8h cap, immutability    |
-| `tests/ui/render.test.ts`      | render() + showOfflineBanner() — formatting, banner display (happy-dom)   |
-| `e2e/game.spec.ts`             | Full browser: initial state, cooking, selling, screenshots (Playwright)   |
+| Path                           | Covers                                                                              |
+| ------------------------------ | ----------------------------------------------------------------------------------- |
+| `tests/engine/tick.test.ts`    | tick() — cooking progress, production, offline catch-up, immutability               |
+| `tests/engine/sell.test.ts`    | sellChickens() — earnings, no-op when empty, immutability                           |
+| `tests/engine/click.test.ts`   | clickCook() — instant cook, counter increment, immutability                         |
+| `tests/engine/buy.test.ts`     | buyUpgrade, getUpgradeCost, effective stats, immutability                           |
+| `tests/engine/save.test.ts`    | serializeState/deserializeState — round-trip, validation, old save compat           |
+| `tests/engine/offline.test.ts` | calculateOfflineEarnings — production, auto-sell, 8h cap, immutability              |
+| `tests/ui/render.test.ts`      | render() + showOfflineBanner() — formatting, banner display (happy-dom)             |
+| `e2e/game.spec.ts`             | Full browser: initial state, cooking, cook click, selling, screenshots (Playwright) |
 
 ## Design Decisions
 

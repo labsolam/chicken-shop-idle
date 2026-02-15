@@ -72,6 +72,35 @@ test.describe("Cooking progress", () => {
   });
 });
 
+test.describe("Cook button", () => {
+  test("clicking cook button produces a chicken immediately", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    // Verify initial state
+    await expect(page.locator("#chickens-ready")).toHaveText("0");
+    await expect(page.locator("#total-cooked")).toHaveText("0");
+
+    // Click cook button
+    await page.locator("#cook-button").click();
+
+    // Should have 1 chicken ready and 1 total cooked
+    const readyText = await page.locator("#chickens-ready").textContent();
+    const readyCount = parseInt(readyText ?? "0", 10);
+    expect(readyCount).toBeGreaterThanOrEqual(1);
+
+    const totalText = await page.locator("#total-cooked").textContent();
+    const totalCount = parseInt(totalText ?? "0", 10);
+    expect(totalCount).toBeGreaterThanOrEqual(1);
+
+    await page.screenshot({
+      path: "e2e/screenshots/after-cook-click.png",
+      fullPage: true,
+    });
+  });
+});
+
 test.describe("Selling", () => {
   test("clicking sell converts chickens to money", async ({ page }) => {
     await page.goto("/");
