@@ -87,7 +87,7 @@ Plans live in two directories based on status:
 | --- | --------------------------------------------- | ----------- | ------------------------------------------------ |
 | 001 | `docs/plans/complete/001-initial-scaffold.md` | Complete    | Project setup, core loop, tests, docs            |
 | 002 | `docs/plans/complete/002-buy-upgrades.md`     | Complete    | Buy upgrades for cook speed + chicken value      |
-| 003 | `docs/plans/todo/003-update-agents-docs.md`   | In Progress | Add missing config files and commands to map      |
+| 003 | `docs/plans/complete/003-update-agents-docs.md` | Complete  | Add missing config files and commands to map      |
 
 ## Conventions
 

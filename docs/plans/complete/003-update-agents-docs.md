@@ -1,6 +1,6 @@
 # Plan 003: Update agents.md with Missing Items
 
-**Status:** In Progress
+**Status:** Complete
 **Date:** 2026-02-14
 
 ## Goal
@@ -31,4 +31,8 @@ Add undocumented config/build files and commands to agents.md so the navigation 
 - [x] Add 5 config/build files to Source Map
 - [x] Add `prepare` script to Commands table
 - [x] Update Plans table to reference this plan
-- [ ] Commit changes
+- [x] Commit changes
+
+## Outcome
+
+Added 5 config/build files to Source Map, 1 command to Commands table, and a default branch convention. All agents.md sections now match the actual codebase.
