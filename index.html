@@ -36,8 +36,11 @@
         cursor: pointer;
         font-family: monospace;
         font-weight: bold;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
       }
-      .action-button:focus {
+      .action-button:focus,
+      .action-button:active {
         outline: none;
       }
       .action-button:hover {
