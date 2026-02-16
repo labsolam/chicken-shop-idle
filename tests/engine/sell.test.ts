@@ -7,15 +7,15 @@ function stateWith(overrides: Partial<GameState>): GameState {
 }
 
 describe("sellChickens", () => {
-  it("sells all ready chickens and adds money", () => {
+  it("sells 1 ready chicken and adds money", () => {
     const state = stateWith({
       chickensReady: 5,
       chickenPriceInCents: 100,
       money: 0,
     });
     const result = sellChickens(state);
-    expect(result.chickensReady).toBe(0);
-    expect(result.money).toBe(500);
+    expect(result.chickensReady).toBe(4);
+    expect(result.money).toBe(100);
   });
 
   it("adds to existing money", () => {
@@ -25,7 +25,8 @@ describe("sellChickens", () => {
       money: 200,
     });
     const result = sellChickens(state);
-    expect(result.money).toBe(650);
+    expect(result.chickensReady).toBe(2);
+    expect(result.money).toBe(350);
   });
 
   it("does nothing when no chickens are ready", () => {

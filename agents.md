@@ -40,7 +40,7 @@ Pure state machine with 3-step clicker flow (Buy → Cook → Sell). Engine func
 | `src/types/game-state.ts`   | GameState interface and initial state factory ($5.00 start)              |
 | `src/engine/buy-chicken.ts` | Buy action — spend money to add 1 raw chicken ($0.25 cost)               |
 | `src/engine/click.ts`       | Cook action — converts 1 raw chicken to 1 cooked chicken                 |
-| `src/engine/sell.ts`        | Sell action — converts cooked chickens to money (uses effective price)   |
+| `src/engine/sell.ts`        | Sell action — sells 1 cooked chicken per click (uses effective price)    |
 | `src/engine/buy.ts`         | Upgrade system — costs, purchases, effective stat calculations           |
 | `src/engine/tick.ts`        | Tick function — currently no-op (idle cooking disabled, kept for future) |
 | `src/engine/save.ts`        | Pure serialize/deserialize for game state persistence                    |
