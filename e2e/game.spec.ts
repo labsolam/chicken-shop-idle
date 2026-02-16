@@ -3,6 +3,7 @@ import { test, expect } from "@playwright/test";
 /**
  * AGENT CONTEXT: End-to-end tests for the chicken shop game.
  * Tests the 3-step clicker flow: Buy → Cook → Sell.
+ * Cooking takes 10s and selling takes 10s (timed actions via tick).
  * These run in a real browser (headless Chromium).
  *
  * Run: npm run test:e2e
@@ -50,7 +51,7 @@ test.describe("Buy → Cook → Sell flow", () => {
     });
   });
 
-  test("cooking converts a raw chicken to a cooked chicken", async ({
+  test("cooking queues a raw chicken and completes after timer", async ({
     page,
   }) => {
     await page.goto("/");
@@ -59,8 +60,14 @@ test.describe("Buy → Cook → Sell flow", () => {
     await page.locator("#buy-chicken-button").click();
     await page.locator("#cook-button").click();
 
+    // Chicken is now in cooking queue, not yet ready
     await expect(page.locator("#chickens-bought")).toHaveText("0");
-    await expect(page.locator("#chickens-ready")).toHaveText("1");
+    await expect(page.locator("#cooking-status")).toContainText("Cooking:");
+
+    // Wait for the 10s cook timer to complete
+    await expect(page.locator("#chickens-ready")).toHaveText("1", {
+      timeout: 15000,
+    });
     await expect(page.locator("#total-cooked")).toHaveText("1");
 
     await page.screenshot({
@@ -69,17 +76,31 @@ test.describe("Buy → Cook → Sell flow", () => {
     });
   });
 
-  test("selling converts cooked chickens to money", async ({ page }) => {
+  test("selling queues cooked chickens and earns money after timer", async ({
+    page,
+  }) => {
     await page.goto("/");
 
-    // Buy, cook, sell
+    // Buy, wait for cook, then sell
     await page.locator("#buy-chicken-button").click();
     await page.locator("#cook-button").click();
+
+    // Wait for cooking to complete
+    await expect(page.locator("#chickens-ready")).toHaveText("1", {
+      timeout: 15000,
+    });
+
     await page.locator("#sell-button").click();
 
+    // Chicken is now in selling queue
     await expect(page.locator("#chickens-ready")).toHaveText("0");
+    await expect(page.locator("#selling-status")).toContainText("Selling:");
+
+    // Wait for the 10s sell timer to complete
     // Started with $5.00, spent $0.25, earned $1.00 = $5.75
-    await expect(page.locator("#money")).toHaveText("$5.75");
+    await expect(page.locator("#money")).toHaveText("$5.75", {
+      timeout: 15000,
+    });
 
     await page.screenshot({
       path: "e2e/screenshots/after-sell.png",

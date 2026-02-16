@@ -18,7 +18,9 @@ function setupDOM(): void {
     <span id="total-cooked"></span>
     <button id="buy-chicken-button"></button>
     <button id="cook-button"></button>
+    <div id="cooking-status"></div>
     <button id="sell-button"></button>
+    <div id="selling-status"></div>
     <div id="offline-banner" style="display: none;"></div>
     <span id="cook-speed-level"></span>
     <span id="cook-speed-cost"></span>
@@ -152,6 +154,47 @@ describe("render", () => {
     ) as HTMLButtonElement;
     expect(cookBtn.disabled).toBe(false);
     expect(valueBtn.disabled).toBe(false);
+  });
+
+  it("shows cooking status when chickens are cooking", () => {
+    render(
+      stateWith({
+        cookingCount: 3,
+        cookingElapsedMs: 5000,
+        cookTimeSeconds: 10,
+        cookSpeedLevel: 0,
+      }),
+    );
+    const text = getText("cooking-status");
+    expect(text).toContain("Cooking:");
+    expect(text).toContain("3 in queue");
+    expect(text).toContain("5.0s");
+    expect(text).toContain("10.0s");
+  });
+
+  it("clears cooking status when no chickens are cooking", () => {
+    render(stateWith({ cookingCount: 0 }));
+    expect(getText("cooking-status")).toBe("");
+  });
+
+  it("shows selling status when chickens are selling", () => {
+    render(
+      stateWith({
+        sellingCount: 2,
+        sellingElapsedMs: 3000,
+        sellTimeSeconds: 10,
+      }),
+    );
+    const text = getText("selling-status");
+    expect(text).toContain("Selling:");
+    expect(text).toContain("2 in queue");
+    expect(text).toContain("3.0s");
+    expect(text).toContain("10.0s");
+  });
+
+  it("clears selling status when no chickens are selling", () => {
+    render(stateWith({ sellingCount: 0 }));
+    expect(getText("selling-status")).toBe("");
   });
 });
 

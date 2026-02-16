@@ -2,6 +2,7 @@
  * AGENT CONTEXT: This file defines the complete game state shape.
  * The game uses a 3-step clicker flow: Buy → Cook → Sell.
  * All monetary values are in integer cents to avoid floating point issues.
+ * Cooking and selling are timed actions processed by tick().
  */
 
 export interface GameState {
@@ -17,7 +18,7 @@ export interface GameState {
   /** Chickens currently cooked and ready to sell */
   chickensReady: number;
 
-  /** Seconds to cook one chicken (used by upgrades) */
+  /** Base seconds to cook one chicken (reduced by upgrades) */
   cookTimeSeconds: number;
 
   /** Sale price per chicken in cents */
@@ -34,6 +35,21 @@ export interface GameState {
 
   /** Current chicken-value upgrade level (0 = no upgrades bought) */
   chickenValueLevel: number;
+
+  /** Chickens queued or in-progress for cooking */
+  cookingCount: number;
+
+  /** Milliseconds elapsed cooking the current chicken */
+  cookingElapsedMs: number;
+
+  /** Chickens queued or in-progress for selling */
+  sellingCount: number;
+
+  /** Milliseconds elapsed selling the current chicken */
+  sellingElapsedMs: number;
+
+  /** Base seconds to sell one chicken */
+  sellTimeSeconds: number;
 }
 
 export function createInitialState(): GameState {
@@ -42,11 +58,16 @@ export function createInitialState(): GameState {
     totalChickensCooked: 0,
     chickensBought: 0,
     chickensReady: 0,
-    cookTimeSeconds: 5,
+    cookTimeSeconds: 10,
     chickenPriceInCents: 100,
     shopOpen: true,
     lastUpdateTimestamp: Date.now(),
     cookSpeedLevel: 0,
     chickenValueLevel: 0,
+    cookingCount: 0,
+    cookingElapsedMs: 0,
+    sellingCount: 0,
+    sellingElapsedMs: 0,
+    sellTimeSeconds: 10,
   };
 }

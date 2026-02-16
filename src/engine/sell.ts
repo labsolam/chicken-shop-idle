@@ -1,22 +1,19 @@
 import { GameState } from "../types/game-state";
-import { getEffectiveChickenPrice } from "./buy";
 
 /**
  * AGENT CONTEXT: Sell all ready chickens.
- * Pure function: returns new state with chickensReady zeroed and money increased.
- * Called as a player action, not automatically by tick.
- * Price is modified by chickenValueLevel via getEffectiveChickenPrice.
+ * Pure function: queues all ready chickens for selling.
+ * Money is earned over time via tick() as each chicken finishes selling.
+ * No-op when no chickens ready.
  */
 export function sellChickens(state: GameState): GameState {
-  const effectivePrice = getEffectiveChickenPrice(
-    state.chickenPriceInCents,
-    state.chickenValueLevel,
-  );
-  const earnings = state.chickensReady * effectivePrice;
+  if (state.chickensReady <= 0) {
+    return { ...state };
+  }
 
   return {
     ...state,
+    sellingCount: state.sellingCount + state.chickensReady,
     chickensReady: 0,
-    money: state.money + earnings,
   };
 }

@@ -27,45 +27,45 @@ Chicken Shop — a browser-based clicker game where you run a chicken shop. Buy 
 
 ## Architecture
 
-Pure state machine with 3-step clicker flow (Buy → Cook → Sell). Engine functions are pure (`state => newState`). UI is a thin DOM renderer. See decisions 003 and 010.
+Pure state machine with 3-step clicker flow (Buy → Cook → Sell). Cooking and selling are timed actions processed by tick(). Engine functions are pure (`state => newState`). UI is a thin DOM renderer. Game loop via requestAnimationFrame. See decisions 003, 010, and 011.
 
 ## Source Map
 
-| Path                        | Purpose                                                                  |
-| --------------------------- | ------------------------------------------------------------------------ |
-| `eslint.config.js`          | ESLint flat config — strict TS rules + Prettier compat                   |
-| `.prettierrc`               | Prettier formatting config                                               |
-| `.husky/pre-commit`         | Pre-commit hook — lint-staged then tests                                 |
-| `playwright.config.ts`      | Playwright e2e config — auto-starts Vite, screenshots                    |
-| `src/types/game-state.ts`   | GameState interface and initial state factory ($5.00 start)              |
-| `src/engine/buy-chicken.ts` | Buy action — spend money to add 1 raw chicken ($0.25 cost)               |
-| `src/engine/click.ts`       | Cook action — converts 1 raw chicken to 1 cooked chicken                 |
-| `src/engine/sell.ts`        | Sell action — converts cooked chickens to money (uses effective price)   |
-| `src/engine/buy.ts`         | Upgrade system — costs, purchases, effective stat calculations           |
-| `src/engine/tick.ts`        | Tick function — currently no-op (idle cooking disabled, kept for future) |
-| `src/engine/save.ts`        | Pure serialize/deserialize for game state persistence                    |
-| `src/engine/offline.ts`     | Offline earnings — currently no-op (kept for future idle mechanics)      |
-| `src/ui/render.ts`          | DOM renderer — stats, action buttons, upgrade buttons, offline banner    |
-| `src/main.ts`               | Entry point — buy/cook/sell events, save/load                            |
-| `tsconfig.json`             | TypeScript config — strict mode, path aliases (@engine, @ui, @types)     |
-| `vite.config.ts`            | Vite build config — default settings, serves at root `/` for Vercel      |
-| `vitest.config.ts`          | Vitest config — path aliases, test include pattern                       |
-| `index.html`                | HTML entry point — game UI shell, inline styles, module script           |
-| `CLAUDE.md`                 | Claude Code auto-loaded config — points agents to agents.md              |
+| Path                        | Purpose                                                                |
+| --------------------------- | ---------------------------------------------------------------------- |
+| `eslint.config.js`          | ESLint flat config — strict TS rules + Prettier compat                 |
+| `.prettierrc`               | Prettier formatting config                                             |
+| `.husky/pre-commit`         | Pre-commit hook — lint-staged then tests                               |
+| `playwright.config.ts`      | Playwright e2e config — auto-starts Vite, screenshots                  |
+| `src/types/game-state.ts`   | GameState interface and initial state factory ($5.00 start)            |
+| `src/engine/buy-chicken.ts` | Buy action — spend money to add 1 raw chicken ($0.25 cost)             |
+| `src/engine/click.ts`       | Cook action — queues 1 raw chicken for timed cooking                   |
+| `src/engine/sell.ts`        | Sell action — queues cooked chickens for timed selling                 |
+| `src/engine/buy.ts`         | Upgrade system — costs, purchases, effective stat calculations         |
+| `src/engine/tick.ts`        | Tick function — advances cooking/selling timers, completes actions     |
+| `src/engine/save.ts`        | Pure serialize/deserialize for game state persistence                  |
+| `src/engine/offline.ts`     | Offline earnings — currently no-op (kept for future idle mechanics)    |
+| `src/ui/render.ts`          | DOM renderer — stats, timers, action buttons, upgrades, offline banner |
+| `src/main.ts`               | Entry point — events, game loop (rAF), save/load                       |
+| `tsconfig.json`             | TypeScript config — strict mode, path aliases (@engine, @ui, @types)   |
+| `vite.config.ts`            | Vite build config — default settings, serves at root `/` for Vercel    |
+| `vitest.config.ts`          | Vitest config — path aliases, test include pattern                     |
+| `index.html`                | HTML entry point — game UI shell, inline styles, module script         |
+| `CLAUDE.md`                 | Claude Code auto-loaded config — points agents to agents.md            |
 
 ## Test Map
 
 | Path                               | Covers                                                                           |
 | ---------------------------------- | -------------------------------------------------------------------------------- |
 | `tests/engine/buy-chicken.test.ts` | buyChicken() — cost deduction, no-op when broke, immutability                    |
-| `tests/engine/click.test.ts`       | clickCook() — raw-to-cooked conversion, no-op without raw, immutability          |
-| `tests/engine/sell.test.ts`        | sellChickens() — earnings, no-op when empty, immutability                        |
+| `tests/engine/click.test.ts`       | clickCook() — queues raw for cooking, no-op without raw, immutability            |
+| `tests/engine/sell.test.ts`        | sellChickens() — queues ready for selling, no-op when empty, immutability        |
 | `tests/engine/buy.test.ts`         | buyUpgrade, getUpgradeCost, effective stats, immutability                        |
-| `tests/engine/tick.test.ts`        | tick() — no-op (idle disabled), immutability                                     |
+| `tests/engine/tick.test.ts`        | tick() — cooking/selling timer processing, completion, carry-over, immutability  |
 | `tests/engine/save.test.ts`        | serializeState/deserializeState — round-trip, validation, old save compat        |
 | `tests/engine/offline.test.ts`     | calculateOfflineEarnings — no-op (idle disabled), timestamp update, immutability |
-| `tests/ui/render.test.ts`          | render() + showOfflineBanner() — formatting, button states, banner (happy-dom)   |
-| `e2e/game.spec.ts`                 | Full browser: buy→cook→sell flow, button states, screenshots (Playwright)        |
+| `tests/ui/render.test.ts`          | render() + showOfflineBanner() — formatting, buttons, timers, banner (happy-dom) |
+| `e2e/game.spec.ts`                 | Full browser: buy→cook→sell with timers, button states, screenshots (Playwright) |
 
 ## Design Decisions
 
@@ -81,6 +81,7 @@ Pure state machine with 3-step clicker flow (Buy → Cook → Sell). Engine func
 | 008 | `docs/decisions/008-buy-upgrades.md`                   | Two purchasable upgrades with exponential cost scaling |
 | 009 | `docs/decisions/009-vercel-deploy.md`                  | Vercel deployment — auto-detect Vite, preview deploys  |
 | 010 | `docs/decisions/010-buy-cook-sell-clicker.md`          | 3-step clicker flow: Buy → Cook → Sell                 |
+| 011 | `docs/decisions/011-cooking-selling-timers.md`         | 10s cooking + 10s selling timers via tick()            |
 
 ## Plans
 
@@ -89,14 +90,15 @@ Plans live in two directories based on status:
 - **`docs/plans/todo/`** — Active and upcoming plans
 - **`docs/plans/complete/`** — Finished plans (moved here when done)
 
-| ID  | File                                               | Status   | Summary                                      |
-| --- | -------------------------------------------------- | -------- | -------------------------------------------- |
-| 001 | `docs/plans/complete/001-initial-scaffold.md`      | Complete | Project setup, core loop, tests, docs        |
-| 002 | `docs/plans/complete/002-buy-upgrades.md`          | Complete | Buy upgrades for cook speed + chicken value  |
-| 003 | `docs/plans/complete/003-update-agents-docs.md`    | Complete | Add missing config files and commands to map |
-| 004 | `docs/plans/complete/004-click-to-cook.md`         | Complete | Click-to-cook clicker button                 |
-| 005 | `docs/plans/complete/005-migrate-to-vercel.md`     | Complete | Migrate deploy from GitHub Pages to Vercel   |
-| 006 | `docs/plans/complete/006-buy-cook-sell-clicker.md` | Complete | 3-step clicker: Buy → Cook → Sell            |
+| ID  | File                                                | Status   | Summary                                      |
+| --- | --------------------------------------------------- | -------- | -------------------------------------------- |
+| 001 | `docs/plans/complete/001-initial-scaffold.md`       | Complete | Project setup, core loop, tests, docs        |
+| 002 | `docs/plans/complete/002-buy-upgrades.md`           | Complete | Buy upgrades for cook speed + chicken value  |
+| 003 | `docs/plans/complete/003-update-agents-docs.md`     | Complete | Add missing config files and commands to map |
+| 004 | `docs/plans/complete/004-click-to-cook.md`          | Complete | Click-to-cook clicker button                 |
+| 005 | `docs/plans/complete/005-migrate-to-vercel.md`      | Complete | Migrate deploy from GitHub Pages to Vercel   |
+| 006 | `docs/plans/complete/006-buy-cook-sell-clicker.md`  | Complete | 3-step clicker: Buy → Cook → Sell            |
+| 007 | `docs/plans/complete/007-cooking-selling-timers.md` | Complete | 10s cooking + 10s selling timers             |
 
 ## Conventions
 

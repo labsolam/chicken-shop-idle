@@ -20,6 +20,11 @@ describe("serializeState", () => {
     expect(parsed).toHaveProperty("chickenPriceInCents");
     expect(parsed).toHaveProperty("shopOpen");
     expect(parsed).toHaveProperty("lastUpdateTimestamp");
+    expect(parsed).toHaveProperty("cookingCount");
+    expect(parsed).toHaveProperty("cookingElapsedMs");
+    expect(parsed).toHaveProperty("sellingCount");
+    expect(parsed).toHaveProperty("sellingElapsedMs");
+    expect(parsed).toHaveProperty("sellTimeSeconds");
   });
 });
 
@@ -30,12 +35,17 @@ describe("deserializeState", () => {
       totalChickensCooked: 42,
       chickensBought: 5,
       chickensReady: 3,
-      cookTimeSeconds: 5,
+      cookTimeSeconds: 10,
       chickenPriceInCents: 100,
       shopOpen: true,
       lastUpdateTimestamp: 1700000000000,
       cookSpeedLevel: 2,
       chickenValueLevel: 3,
+      cookingCount: 1,
+      cookingElapsedMs: 3000,
+      sellingCount: 2,
+      sellingElapsedMs: 5000,
+      sellTimeSeconds: 10,
     };
     const json = serializeState(original);
     const restored = deserializeState(json);
@@ -60,7 +70,7 @@ describe("deserializeState", () => {
       money: "not a number",
       totalChickensCooked: 0,
       chickensReady: 0,
-      cookTimeSeconds: 5,
+      cookTimeSeconds: 10,
       chickenPriceInCents: 100,
       shopOpen: true,
       lastUpdateTimestamp: 0,
@@ -83,6 +93,11 @@ describe("deserializeState", () => {
     expect(restored?.cookSpeedLevel).toBe(0);
     expect(restored?.chickenValueLevel).toBe(0);
     expect(restored?.chickensBought).toBe(0);
+    expect(restored?.cookingCount).toBe(0);
+    expect(restored?.cookingElapsedMs).toBe(0);
+    expect(restored?.sellingCount).toBe(0);
+    expect(restored?.sellingElapsedMs).toBe(0);
+    expect(restored?.sellTimeSeconds).toBe(10);
   });
 
   it("ignores extra fields in JSON", () => {

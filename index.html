@@ -74,6 +74,13 @@
         color: #888;
         font-size: 12px;
       }
+      .timer-status {
+        margin: 4px 0 0;
+        padding: 4px 0;
+        color: #f5a623;
+        font-size: 14px;
+        min-height: 22px;
+      }
       #offline-banner {
         display: none;
         margin: 12px 0;
@@ -109,7 +116,9 @@
       Buy Chicken ($0.25)
     </button>
     <button id="cook-button" class="action-button">Cook Chicken</button>
+    <div class="timer-status" id="cooking-status"></div>
     <button id="sell-button" class="action-button">Sell Chickens</button>
+    <div class="timer-status" id="selling-status"></div>
 
     <div class="upgrades">
       <h2>Upgrades</h2>

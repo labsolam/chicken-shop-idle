@@ -1,6 +1,6 @@
 import { GameState } from "../types/game-state";
 import { OfflineResult } from "../engine/offline";
-import { getUpgradeCost } from "../engine/buy";
+import { getUpgradeCost, getEffectiveCookTime } from "../engine/buy";
 import { RAW_CHICKEN_COST } from "../engine/buy-chicken";
 
 /**
@@ -25,6 +25,10 @@ function formatDuration(ms: number): string {
   return `${minutes}m`;
 }
 
+function formatTimerSeconds(ms: number): string {
+  return (ms / 1000).toFixed(1);
+}
+
 export function render(state: GameState): void {
   const moneyEl = document.getElementById("money");
   const boughtEl = document.getElementById("chickens-bought");
@@ -35,6 +39,30 @@ export function render(state: GameState): void {
   if (boughtEl) boughtEl.textContent = String(state.chickensBought);
   if (readyEl) readyEl.textContent = String(state.chickensReady);
   if (totalEl) totalEl.textContent = String(state.totalChickensCooked);
+
+  // Cooking timer status
+  const cookingStatusEl = document.getElementById("cooking-status");
+  if (cookingStatusEl) {
+    if (state.cookingCount > 0) {
+      const cookTimeSec = getEffectiveCookTime(
+        state.cookTimeSeconds,
+        state.cookSpeedLevel,
+      );
+      cookingStatusEl.textContent = `Cooking: ${state.cookingCount} in queue (${formatTimerSeconds(state.cookingElapsedMs)}s / ${formatTimerSeconds(cookTimeSec * 1000)}s)`;
+    } else {
+      cookingStatusEl.textContent = "";
+    }
+  }
+
+  // Selling timer status
+  const sellingStatusEl = document.getElementById("selling-status");
+  if (sellingStatusEl) {
+    if (state.sellingCount > 0) {
+      sellingStatusEl.textContent = `Selling: ${state.sellingCount} in queue (${formatTimerSeconds(state.sellingElapsedMs)}s / ${formatTimerSeconds(state.sellTimeSeconds * 1000)}s)`;
+    } else {
+      sellingStatusEl.textContent = "";
+    }
+  }
 
   // Action buttons — disable when action is not possible
   const buyChickenBtn = document.getElementById(

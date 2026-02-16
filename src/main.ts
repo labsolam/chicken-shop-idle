@@ -3,12 +3,14 @@ import { sellChickens } from "./engine/sell";
 import { buyUpgrade } from "./engine/buy";
 import { buyChicken } from "./engine/buy-chicken";
 import { clickCook } from "./engine/click";
+import { tick } from "./engine/tick";
 import { serializeState, deserializeState } from "./engine/save";
 import { render } from "./ui/render";
 
 /**
  * AGENT CONTEXT: Application entry point.
  * 3-step clicker flow: Buy → Cook → Sell.
+ * Cooking and selling are timed — tick() advances timers each frame.
  * Loads saved game from localStorage (or creates fresh state).
  * Auto-saves every 30s + on page unload.
  */
@@ -84,6 +86,22 @@ if (buyChickenValueButton) {
     render(state);
   });
 }
+
+// --- Game Loop ---
+
+let lastTimestamp = performance.now();
+
+function gameLoop(now: number): void {
+  const deltaMs = now - lastTimestamp;
+  lastTimestamp = now;
+
+  state = tick(state, deltaMs);
+  render(state);
+
+  requestAnimationFrame(gameLoop);
+}
+
+requestAnimationFrame(gameLoop);
 
 // --- Persistence ---
 
