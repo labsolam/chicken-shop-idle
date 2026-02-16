@@ -13,9 +13,12 @@ function stateWith(overrides: Partial<GameState>): GameState {
 function setupDOM(): void {
   document.body.innerHTML = `
     <span id="money"></span>
+    <span id="chickens-bought"></span>
     <span id="chickens-ready"></span>
-    <span id="cooking-progress"></span>
     <span id="total-cooked"></span>
+    <button id="buy-chicken-button"></button>
+    <button id="cook-button"></button>
+    <button id="sell-button"></button>
     <div id="offline-banner" style="display: none;"></div>
     <span id="cook-speed-level"></span>
     <span id="cook-speed-cost"></span>
@@ -45,24 +48,59 @@ describe("render", () => {
     expect(getText("money")).toBe("$0.00");
   });
 
-  it("displays chickens ready count", () => {
+  it("displays raw chickens bought count", () => {
+    render(stateWith({ chickensBought: 10 }));
+    expect(getText("chickens-bought")).toBe("10");
+  });
+
+  it("displays cooked chickens ready count", () => {
     render(stateWith({ chickensReady: 7 }));
     expect(getText("chickens-ready")).toBe("7");
-  });
-
-  it("displays cooking progress as percentage", () => {
-    render(stateWith({ cookingProgress: 0.75 }));
-    expect(getText("cooking-progress")).toBe("75%");
-  });
-
-  it("floors cooking progress percentage", () => {
-    render(stateWith({ cookingProgress: 0.333 }));
-    expect(getText("cooking-progress")).toBe("33%");
   });
 
   it("displays total chickens cooked", () => {
     render(stateWith({ totalChickensCooked: 42 }));
     expect(getText("total-cooked")).toBe("42");
+  });
+
+  it("disables buy chicken button when money is insufficient", () => {
+    render(stateWith({ money: 10 }));
+    const btn = document.getElementById(
+      "buy-chicken-button",
+    ) as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+  });
+
+  it("enables buy chicken button when money is sufficient", () => {
+    render(stateWith({ money: 500 }));
+    const btn = document.getElementById(
+      "buy-chicken-button",
+    ) as HTMLButtonElement;
+    expect(btn.disabled).toBe(false);
+  });
+
+  it("disables cook button when no raw chickens", () => {
+    render(stateWith({ chickensBought: 0 }));
+    const btn = document.getElementById("cook-button") as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+  });
+
+  it("enables cook button when raw chickens available", () => {
+    render(stateWith({ chickensBought: 3 }));
+    const btn = document.getElementById("cook-button") as HTMLButtonElement;
+    expect(btn.disabled).toBe(false);
+  });
+
+  it("disables sell button when no cooked chickens", () => {
+    render(stateWith({ chickensReady: 0 }));
+    const btn = document.getElementById("sell-button") as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+  });
+
+  it("enables sell button when cooked chickens available", () => {
+    render(stateWith({ chickensReady: 5 }));
+    const btn = document.getElementById("sell-button") as HTMLButtonElement;
+    expect(btn.disabled).toBe(false);
   });
 
   it("updates all fields on re-render", () => {

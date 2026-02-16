@@ -14,8 +14,8 @@ describe("serializeState", () => {
     const parsed = JSON.parse(serializeState(state));
     expect(parsed).toHaveProperty("money");
     expect(parsed).toHaveProperty("totalChickensCooked");
+    expect(parsed).toHaveProperty("chickensBought");
     expect(parsed).toHaveProperty("chickensReady");
-    expect(parsed).toHaveProperty("cookingProgress");
     expect(parsed).toHaveProperty("cookTimeSeconds");
     expect(parsed).toHaveProperty("chickenPriceInCents");
     expect(parsed).toHaveProperty("shopOpen");
@@ -28,8 +28,8 @@ describe("deserializeState", () => {
     const original: GameState = {
       money: 5000,
       totalChickensCooked: 42,
+      chickensBought: 5,
       chickensReady: 3,
-      cookingProgress: 0.75,
       cookTimeSeconds: 5,
       chickenPriceInCents: 100,
       shopOpen: true,
@@ -60,7 +60,6 @@ describe("deserializeState", () => {
       money: "not a number",
       totalChickensCooked: 0,
       chickensReady: 0,
-      cookingProgress: 0,
       cookTimeSeconds: 5,
       chickenPriceInCents: 100,
       shopOpen: true,
@@ -69,12 +68,11 @@ describe("deserializeState", () => {
     expect(deserializeState(JSON.stringify(bad))).toBeNull();
   });
 
-  it("defaults missing upgrade levels to 0 (old save compat)", () => {
+  it("defaults missing optional fields to 0 (old save compat)", () => {
     const oldSave = {
       money: 1000,
       totalChickensCooked: 10,
       chickensReady: 2,
-      cookingProgress: 0.5,
       cookTimeSeconds: 5,
       chickenPriceInCents: 100,
       shopOpen: true,
@@ -84,6 +82,7 @@ describe("deserializeState", () => {
     expect(restored).not.toBeNull();
     expect(restored?.cookSpeedLevel).toBe(0);
     expect(restored?.chickenValueLevel).toBe(0);
+    expect(restored?.chickensBought).toBe(0);
   });
 
   it("ignores extra fields in JSON", () => {

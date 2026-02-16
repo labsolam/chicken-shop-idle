@@ -1,41 +1,34 @@
 import { createInitialState, GameState } from "./types/game-state";
-import { tick } from "./engine/tick";
 import { sellChickens } from "./engine/sell";
 import { buyUpgrade } from "./engine/buy";
+import { buyChicken } from "./engine/buy-chicken";
 import { clickCook } from "./engine/click";
 import { serializeState, deserializeState } from "./engine/save";
-import { calculateOfflineEarnings, OfflineResult } from "./engine/offline";
-import { render, showOfflineBanner } from "./ui/render";
+import { render } from "./ui/render";
 
 /**
  * AGENT CONTEXT: Application entry point.
+ * 3-step clicker flow: Buy → Cook → Sell.
  * Loads saved game from localStorage (or creates fresh state).
- * Calculates offline earnings on return. Auto-saves every 30s + on page unload.
- * Game loop uses performance.now() for frame delta; Date.now() for save timestamps.
+ * Auto-saves every 30s + on page unload.
  */
 
 const SAVE_KEY = "chicken-shop-idle-save";
 const AUTO_SAVE_INTERVAL_MS = 30_000;
 
-function loadOrCreate(): { state: GameState; offline: OfflineResult | null } {
+function loadOrCreate(): GameState {
   let json: string | null;
   try {
     json = localStorage.getItem(SAVE_KEY);
   } catch {
-    return { state: createInitialState(), offline: null };
+    return createInitialState();
   }
 
   if (!json) {
-    return { state: createInitialState(), offline: null };
+    return createInitialState();
   }
 
-  const saved = deserializeState(json);
-  if (!saved) {
-    return { state: createInitialState(), offline: null };
-  }
-
-  const offline = calculateOfflineEarnings(saved, Date.now());
-  return { state: offline.state, offline };
+  return deserializeState(json) ?? createInitialState();
 }
 
 function saveGame(state: GameState): void {
@@ -48,31 +41,16 @@ function saveGame(state: GameState): void {
 
 // --- Initialize ---
 
-const loaded = loadOrCreate();
-let state = loaded.state;
-let lastFrameTime = performance.now();
-
-if (loaded.offline && loaded.offline.moneyEarned > 0) {
-  showOfflineBanner(loaded.offline);
-}
-
-// --- Game loop ---
-
-function gameLoop(currentTime: number): void {
-  const deltaMs = currentTime - lastFrameTime;
-  lastFrameTime = currentTime;
-
-  state = tick(state, deltaMs);
-  state = { ...state, lastUpdateTimestamp: Date.now() };
-  render(state);
-  requestAnimationFrame(gameLoop);
-}
+let state = loadOrCreate();
 
 // --- Events ---
 
-function onSellClick(): void {
-  state = sellChickens(state);
-  render(state);
+const buyChickenButton = document.getElementById("buy-chicken-button");
+if (buyChickenButton) {
+  buyChickenButton.addEventListener("click", () => {
+    state = buyChicken(state);
+    render(state);
+  });
 }
 
 const cookButton = document.getElementById("cook-button");
@@ -85,7 +63,10 @@ if (cookButton) {
 
 const sellButton = document.getElementById("sell-button");
 if (sellButton) {
-  sellButton.addEventListener("click", onSellClick);
+  sellButton.addEventListener("click", () => {
+    state = sellChickens(state);
+    render(state);
+  });
 }
 
 const buyCookSpeedButton = document.getElementById("buy-cook-speed");
@@ -112,4 +93,3 @@ window.addEventListener("beforeunload", () => saveGame(state));
 // --- Start ---
 
 render(state);
-requestAnimationFrame(gameLoop);
