@@ -9,7 +9,6 @@ const STATE_FIELDS: Array<{ key: keyof GameState; type: string }> = [
   { key: "money", type: "number" },
   { key: "totalChickensCooked", type: "number" },
   { key: "chickensReady", type: "number" },
-  { key: "cookingProgress", type: "number" },
   { key: "cookTimeSeconds", type: "number" },
   { key: "chickenPriceInCents", type: "number" },
   { key: "shopOpen", type: "boolean" },
@@ -20,6 +19,7 @@ const STATE_FIELDS: Array<{ key: keyof GameState; type: string }> = [
 const OPTIONAL_NUMBER_FIELDS: Array<keyof GameState> = [
   "cookSpeedLevel",
   "chickenValueLevel",
+  "chickensBought",
 ];
 
 export function serializeState(state: GameState): string {
@@ -55,8 +55,8 @@ export function deserializeState(json: string): GameState | null {
   return {
     money: obj.money as number,
     totalChickensCooked: obj.totalChickensCooked as number,
+    chickensBought: (obj.chickensBought as number) ?? 0,
     chickensReady: obj.chickensReady as number,
-    cookingProgress: obj.cookingProgress as number,
     cookTimeSeconds: obj.cookTimeSeconds as number,
     chickenPriceInCents: obj.chickenPriceInCents as number,
     shopOpen: obj.shopOpen as boolean,

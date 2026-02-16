@@ -1,6 +1,7 @@
 import { GameState } from "../types/game-state";
 import { OfflineResult } from "../engine/offline";
 import { getUpgradeCost } from "../engine/buy";
+import { RAW_CHICKEN_COST } from "../engine/buy-chicken";
 
 /**
  * AGENT CONTEXT: Minimal DOM renderer.
@@ -11,10 +12,6 @@ import { getUpgradeCost } from "../engine/buy";
 
 function formatMoney(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
-}
-
-function formatProgress(progress: number): string {
-  return `${Math.floor(progress * 100)}%`;
 }
 
 function formatDuration(ms: number): string {
@@ -30,15 +27,29 @@ function formatDuration(ms: number): string {
 
 export function render(state: GameState): void {
   const moneyEl = document.getElementById("money");
+  const boughtEl = document.getElementById("chickens-bought");
   const readyEl = document.getElementById("chickens-ready");
-  const progressEl = document.getElementById("cooking-progress");
   const totalEl = document.getElementById("total-cooked");
 
   if (moneyEl) moneyEl.textContent = formatMoney(state.money);
+  if (boughtEl) boughtEl.textContent = String(state.chickensBought);
   if (readyEl) readyEl.textContent = String(state.chickensReady);
-  if (progressEl)
-    progressEl.textContent = formatProgress(state.cookingProgress);
   if (totalEl) totalEl.textContent = String(state.totalChickensCooked);
+
+  // Action buttons — disable when action is not possible
+  const buyChickenBtn = document.getElementById(
+    "buy-chicken-button",
+  ) as HTMLButtonElement | null;
+  const cookBtn = document.getElementById(
+    "cook-button",
+  ) as HTMLButtonElement | null;
+  const sellBtn = document.getElementById(
+    "sell-button",
+  ) as HTMLButtonElement | null;
+
+  if (buyChickenBtn) buyChickenBtn.disabled = state.money < RAW_CHICKEN_COST;
+  if (cookBtn) cookBtn.disabled = state.chickensBought <= 0;
+  if (sellBtn) sellBtn.disabled = state.chickensReady <= 0;
 
   // Upgrade buttons
   const cookSpeedCost = getUpgradeCost("cookSpeed", state.cookSpeedLevel);

@@ -1,12 +1,9 @@
 import { GameState } from "../types/game-state";
-import { tick } from "./tick";
 
 /**
  * AGENT CONTEXT: Calculates earnings accumulated while the player was away.
- * Pure function: takes saved state + current timestamp, returns new state + summary.
- * Chickens produced during offline time are auto-sold.
- * Pre-existing ready chickens are kept unsold (player chose not to sell).
- * Elapsed time is capped at MAX_OFFLINE_MS (8 hours).
+ * Currently a no-op — idle cooking is disabled in favor of the clicker flow.
+ * Kept for future idle mechanics.
  */
 
 export const MAX_OFFLINE_MS = 8 * 60 * 60 * 1000;
@@ -25,20 +22,13 @@ export function calculateOfflineEarnings(
   const rawElapsed = nowTimestamp - state.lastUpdateTimestamp;
   const elapsedMs = Math.min(Math.max(rawElapsed, 0), MAX_OFFLINE_MS);
 
-  const afterTick = tick(state, elapsedMs);
-  const chickensProduced =
-    afterTick.totalChickensCooked - state.totalChickensCooked;
-  const moneyEarned = chickensProduced * state.chickenPriceInCents;
-
   return {
     state: {
-      ...afterTick,
-      chickensReady: state.chickensReady,
-      money: state.money + moneyEarned,
+      ...state,
       lastUpdateTimestamp: nowTimestamp,
     },
     elapsedMs,
-    chickensProduced,
-    moneyEarned,
+    chickensProduced: 0,
+    moneyEarned: 0,
   };
 }

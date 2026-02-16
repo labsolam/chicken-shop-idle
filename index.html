@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chicken Shop Idle</title>
+    <title>Chicken Shop</title>
     <style>
       body {
         font-family: monospace;
@@ -82,26 +82,29 @@
     </style>
   </head>
   <body>
-    <h1>Chicken Shop Idle</h1>
+    <h1>Chicken Shop</h1>
     <div id="offline-banner"></div>
 
     <div class="stat">
       <span class="label">Money:</span>
-      <span class="value" id="money">$0.00</span>
+      <span class="value" id="money">$5.00</span>
     </div>
     <div class="stat">
-      <span class="label">Chickens Ready:</span>
+      <span class="label">Raw Chickens:</span>
+      <span class="value" id="chickens-bought">0</span>
+    </div>
+    <div class="stat">
+      <span class="label">Cooked Chickens:</span>
       <span class="value" id="chickens-ready">0</span>
-    </div>
-    <div class="stat">
-      <span class="label">Cooking:</span>
-      <span class="value" id="cooking-progress">0%</span>
     </div>
     <div class="stat">
       <span class="label">Total Cooked:</span>
       <span class="value" id="total-cooked">0</span>
     </div>
 
+    <button id="buy-chicken-button" class="action-button">
+      Buy Chicken ($0.25)
+    </button>
     <button id="cook-button" class="action-button">Cook Chicken</button>
     <button id="sell-button" class="action-button">Sell Chickens</button>
 
