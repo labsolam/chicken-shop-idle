@@ -20,6 +20,11 @@ const OPTIONAL_NUMBER_FIELDS: Array<keyof GameState> = [
   "cookSpeedLevel",
   "chickenValueLevel",
   "chickensBought",
+  "cookingCount",
+  "cookingElapsedMs",
+  "sellingCount",
+  "sellingElapsedMs",
+  "sellTimeSeconds",
 ];
 
 export function serializeState(state: GameState): string {
@@ -63,5 +68,10 @@ export function deserializeState(json: string): GameState | null {
     lastUpdateTimestamp: obj.lastUpdateTimestamp as number,
     cookSpeedLevel: (obj.cookSpeedLevel as number) ?? 0,
     chickenValueLevel: (obj.chickenValueLevel as number) ?? 0,
+    cookingCount: (obj.cookingCount as number) ?? 0,
+    cookingElapsedMs: (obj.cookingElapsedMs as number) ?? 0,
+    sellingCount: (obj.sellingCount as number) ?? 0,
+    sellingElapsedMs: (obj.sellingElapsedMs as number) ?? 0,
+    sellTimeSeconds: (obj.sellTimeSeconds as number) ?? 10,
   };
 }
