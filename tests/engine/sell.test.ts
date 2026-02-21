@@ -7,18 +7,18 @@ function stateWith(overrides: Partial<GameState>): GameState {
 }
 
 describe("sellChickens", () => {
-  it("queues all ready chickens for selling", () => {
+  it("queues 1 ready chicken for selling", () => {
     const state = stateWith({ chickensReady: 5, sellingCount: 0 });
     const result = sellChickens(state);
-    expect(result.chickensReady).toBe(0);
-    expect(result.sellingCount).toBe(5);
+    expect(result.chickensReady).toBe(4);
+    expect(result.sellingCount).toBe(1);
   });
 
-  it("adds to existing selling queue", () => {
+  it("adds 1 to existing selling queue", () => {
     const state = stateWith({ chickensReady: 3, sellingCount: 2 });
     const result = sellChickens(state);
-    expect(result.chickensReady).toBe(0);
-    expect(result.sellingCount).toBe(5);
+    expect(result.chickensReady).toBe(2);
+    expect(result.sellingCount).toBe(3);
   });
 
   it("does not change money (selling is timed)", () => {
