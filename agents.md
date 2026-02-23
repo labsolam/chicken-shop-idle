@@ -99,6 +99,7 @@ Plans live in two directories based on status:
 | 005 | `docs/plans/complete/005-migrate-to-vercel.md`      | Complete | Migrate deploy from GitHub Pages to Vercel   |
 | 006 | `docs/plans/complete/006-buy-cook-sell-clicker.md`  | Complete | 3-step clicker: Buy → Cook → Sell            |
 | 007 | `docs/plans/complete/007-cooking-selling-timers.md` | Complete | 10s cooking + 10s selling timers             |
+| 008 | `docs/plans/todo/008-fix-strategy-doc-inconsistencies.md` | Todo | Fix contradictions & ambiguities in strategy docs |
 
 ## Conventions
 
