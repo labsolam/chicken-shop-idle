@@ -230,7 +230,7 @@ managers: {
 
 **Problem:** Every recipe consumes raw chickens but the quantity per recipe is never stated. Does a Chicken Feast Platter use 1 raw chicken? That seems wrong for a "platter."
 
-**Fix:** Add a "Raw Input" column to the recipe table:
+**Fix:** Add a "Raw Input" column to the recipe table. The Unlock column values here are placeholders from the original doc — **Step 16 will replace this entire table with corrected unlock values.** Apply this step first (to add the Raw Input column), then apply Step 16 (to fix the Unlock column).
 
 ```markdown
 | Recipe | Raw Input | Cook Time | Sale Value | Unlock |
@@ -423,7 +423,7 @@ An implementing agent would have three "sources of truth" with no guidance on wh
 
 **Fix:** Establish doc 003's Feature Unlock Order table (lines 345-368) as the **single source of truth** for all unlock conditions. Then:
 
-1. **In `002-core-gameplay-loop.md`**, update the recipe table Unlock column to match doc 003's unlock order:
+1. **In `002-core-gameplay-loop.md`**, replace the recipe table (which Step 8 already modified to add a Raw Input column — search for the Step 8 version with "Raw Input" header) with the final corrected version:
 
 ```markdown
 | Recipe | Raw Input | Cook Time | Sale Value | Unlock |
@@ -438,25 +438,27 @@ An implementing agent would have three "sources of truth" with no guidance on wh
 | Signature Dish | 3 | 300s | $100.00 | First prestige |
 ```
 
+> **Note:** This table supersedes Step 8's version. Step 8 added the Raw Input column; this step corrects the Unlock column. Apply Step 8 first, then this step.
+
 Add a note below the table:
 
 ```markdown
 > **Canonical unlock conditions** are defined in doc 003's Feature Unlock Order table. If any other table in these docs shows a different threshold, doc 003's unlock order takes precedence.
 ```
 
-2. **In `003-upgrades-and-enhancements.md`**, update the Revenue Milestones table to match. Replace the Grilled Chicken milestone:
+2. **In `003-upgrades-and-enhancements.md`**, update the Revenue Milestones table:
 
-```markdown
-| $500 | Unlock Grilled Chicken recipe |
-```
+   a. Replace the `$50 | Unlock Grilled Chicken recipe` row with `$500 | Unlock Grilled Chicken recipe` (matches Feature Unlock Order).
 
-And add Chicken Burger, which is currently missing from revenue milestones:
+   b. The `$5,000 | x2 all revenue` row stays as-is. Add a NEW row immediately after it:
 
-```markdown
-| $5,000 | Unlock Chicken Burger recipe |
-```
+   ```markdown
+   | $5,000 | Unlock Chicken Burger recipe |
+   ```
 
-(This replaces the existing `$5,000 | x2 all revenue` row — move the x2 revenue reward to a chickens-sold milestone or a different revenue threshold to avoid collision.)
+   Multiple rewards at the same threshold are fine — both trigger when the player reaches $5K. Do NOT remove the x2 all revenue reward.
+
+   c. Verify that `$5,000,000 | Unlock Chicken Katsu recipe` already matches the Feature Unlock Order. (It does — line 198 already shows $5M for Katsu.)
 
 ### 17. Fix cold storage conflict between doc 002 and doc 003
 
@@ -536,18 +538,166 @@ At any given time, the kitchen cooks ONE recipe type. All cooking slots work on 
 **Future consideration:** If a "Recipe Queue" feature is added in late-game (Phase 5+), it could allow the player to queue a sequence of recipes. But this is out of scope for Phase 1.
 ```
 
+### 20. Specify milestone reward stacking rules
+
+- [ ] **File:** `docs/strategy/003-upgrades-and-enhancements.md`
+- [ ] After the Total Revenue Milestones table (around line 207)
+
+**Problem:** The milestones tables (lines 170-206) award multipliers like "x2 sale value", "x2 all speeds", "x3 all revenue" at various thresholds. But the docs never specify:
+
+1. **Stacking:** Do milestone multipliers compound? The "10 chickens sold" gives "x2 sale value" and "100 chickens sold" also gives "x2 sale value." Is the combined effect x4 (multiplicative stacking) or x2 (only highest applies)?
+2. **Simultaneous triggers:** If a player goes from 0 to 1000 chickens sold (e.g., via offline earnings), milestones at 10, 50, 100, 250, 500, and 1000 all trigger at once. Are all rewards applied simultaneously?
+3. **Permanence:** Are milestone multipliers permanent within a prestige run, or one-time boosts?
+4. **Prestige interaction:** The "What Resets" table in doc 005 says "Milestone progress" resets. Does this mean the multipliers also reset, and must be re-earned?
+
+**Fix:** Add a subsection after the Total Revenue Milestones table:
+
+```markdown
+#### Milestone Reward Rules
+
+1. **Stacking:** All milestone multipliers are permanent within a prestige run and stack **multiplicatively**. If you earn "x2 sale value" at 10 chickens and another "x2 sale value" at 100 chickens, your total sale value multiplier from milestones is x4.
+
+2. **Simultaneous triggers:** When multiple milestones are reached in a single tick (e.g., after offline earnings), ALL eligible milestone rewards are applied at once. Process them in ascending order (lowest threshold first).
+
+3. **Permanence:** Milestone multipliers are permanent once earned within a prestige run. They are NOT timed boosts.
+
+4. **Prestige reset:** All milestone progress AND milestone rewards reset on prestige. The multipliers must be re-earned each run. This is intentional — milestones act as a "run accelerator" that makes each prestige cycle feel progressively faster as the player reaches milestones more quickly with Star bonuses.
+
+5. **Implementation:** Track earned milestones as a `Set<string>` of milestone IDs in GameState. On each tick, check if any new milestone thresholds have been crossed and apply their rewards. Combine all active milestone multipliers into a single `milestoneMultiplier` used in the revenue formula (doc 006, line 217).
+```
+
+### 21. Add phasing notes for underspecified Phase 2+ features
+
+- [ ] **File:** `docs/strategy/003-upgrades-and-enhancements.md` (Tips table, around line 162; Equipment tables, around lines 226-237)
+- [ ] **File:** `docs/strategy/004-idle-and-automation.md` (Click bonuses, around line 281; Diminishing returns, around line 290)
+- [ ] **File:** `docs/strategy/005-prestige-and-endgame.md` (Equipment Retention, around line 90; Permanent Slots, around line 106)
+
+**Problem:** Several features are described in detail but never appear in doc 006's implementation phases. An implementing agent would see the detailed spec and try to build it, not knowing it's deferred. Steps 9 and 10 already handle this for Customer Demand and Golden Drumstick shop. These features need the same treatment:
+
+| Feature | Described in | Mentioned in doc 006 phases? |
+|---|---|---|
+| Customer Tips | Doc 003, lines 150-162 | No (but doc 003 unlock order says $5K, ~45 min) |
+| Equipment-recipe bonuses ("fried items", "grilled items") | Doc 003, lines 218-226 | Phase 3 (but recipe-type definitions missing) |
+| Click bonuses | Doc 004, line 281 | No |
+| Idle diminishing returns | Doc 004, line 290 | No |
+| Equipment retention rounding | Doc 005, line 90 | Phase 4 (but rounding semantics unspecified) |
+| Permanent upgrade slots | Doc 005, line 106 | Phase 4 (but selection mechanics unspecified) |
+
+**Fix:** Add phasing and clarification notes to each:
+
+1. **In `003-upgrades-and-enhancements.md`**, after the Customer Tips table (line 162), add:
+
+```markdown
+> **Implementation phasing:** The tips system is a **Phase 2 feature** (alongside manager automation). Although doc 003's unlock order places it at $5K earned (~45 min), this reflects in-game unlock timing, not implementation phase. Implement it in Phase 2 when managers and idle income are added. For Phase 1, tips do not exist.
+>
+> **Tip trigger:** Tips are a per-sale random check. When a sale completes, roll against the tip chance percentage. If successful, add the tip bonus to that sale's revenue. Tips apply per individual chicken sold, not per batch.
+```
+
+2. **In `003-upgrades-and-enhancements.md`**, after the Kitchen Equipment table (line 226), add:
+
+```markdown
+> **Recipe type definitions:** Equipment bonuses reference recipe categories ("fried items", "grilled items", "stir-fry items"). Each recipe must be tagged with one or more types. Mapping:
+> - **Fried:** Basic Fried Chicken, Chicken Katsu
+> - **Grilled:** Grilled Chicken
+> - **Wings:** Chicken Wings
+> - **Burger:** Chicken Burger
+> - **Roasted:** Rotisserie Chicken
+> - **Stir-fry:** *(future recipe, not in current list)*
+> - **Smoked:** *(requires Smoker equipment)*
+>
+> Equipment bonuses that reference a recipe type apply only when that recipe is the active recipe. If an equipment item gives "+15% value for fried items," it only applies while cooking/selling fried recipes.
+>
+> **Implementation phasing:** Equipment is a **Phase 3 feature**. Do NOT implement in Phases 1-2.
+```
+
+3. **In `004-idle-and-automation.md`**, after the "Active bonus (40%)" bullet about click bonuses (line 281), add:
+
+```markdown
+> **Click bonus implementation:** Click bonuses are a **Phase 2+ feature**, deferred until the manager system exists (clicking during manual play is the baseline, not a bonus). When implemented:
+> - Clicking Buy/Cook/Sell while the corresponding manager is active gives a one-time bonus equal to 10% of one automated action's revenue
+> - Clicking has a 1-second internal cooldown to prevent autoclicker abuse
+> - This is intentionally a small bonus — it rewards checking in without punishing idle-only players
+```
+
+4. **In `004-idle-and-automation.md`**, after the diminishing returns bullet (line 290), add:
+
+```markdown
+> **Diminishing returns implementation:** This is a **Phase 3+ feature** — do NOT implement in Phases 1-2. When implemented:
+> - After 8 hours of continuous idle (tab open, no clicks), earnings reduce to 80% over the next 2 hours (linear ramp)
+> - After 10 hours, earnings cap at 60% (does not decrease further)
+> - Any click or manual action resets the timer
+> - Closing and reopening the tab resets the timer (uses offline earnings for the gap, then fresh idle timer)
+> - This mechanic exists to encourage daily check-ins, not to punish idle play
+```
+
+5. **In `005-prestige-and-endgame.md`**, after the Equipment Retention I row (around line 90), add:
+
+```markdown
+> **Equipment retention rounding:** "Keep 25% of equipment levels" means each individual equipment item's level is multiplied by the retention percentage and **rounded down** (floor). An item at Level 1 floors to Level 0 (fully reset). An item at Level 4 keeps Level 1. An item at Level 10 keeps Level 2 (at 25%) or Level 5 (at 50%). This is a **Phase 4 feature** (prestige system).
+```
+
+6. **In `005-prestige-and-endgame.md`**, after the Permanent Slot I row (around line 106), add:
+
+```markdown
+> **Permanent slot mechanics:** When the player purchases "Permanent Slot I," they choose ONE upgrade to carry through prestige. Rules:
+> - The selection is made via a UI prompt after purchasing the Star upgrade
+> - The player can change their selection at any time before prestiging (it's not locked)
+> - The carried upgrade keeps both its level AND accumulated cost (so continuing to upgrade it uses the expected cost curve, not a reset curve)
+> - Only base upgrades qualify (speed, capacity, value categories) — not equipment, staff, or managers
+> - "Permanent Slot II" adds a second independent selection
+> - This is a **Phase 4 feature** (prestige system)
+```
+
+### 22. Specify upgrade cap behavior
+
+- [ ] **File:** `docs/strategy/003-upgrades-and-enhancements.md`
+- [ ] After the Upgrade Cost Curves section (around line 283)
+
+**Problem:** Step 5 instructs the implementing agent to "Add a level cap (30 for speed, 25 for value, 10 for capacity/slots)" but never specifies what happens when a player reaches the cap. Does the upgrade button disappear? Grey out? Show "MAX"? Can the cap be exceeded by prestige bonuses?
+
+**Fix:** Add a subsection after the Balancing Target section (around line 291):
+
+```markdown
+#### Upgrade Cap Behavior
+
+When an upgrade reaches its maximum level:
+
+1. **UI:** The upgrade button shows "MAX" instead of a cost. The button is disabled (greyed out, not clickable).
+2. **No overflow:** The level cannot exceed the cap under any circumstances. Prestige bonuses like "Speed Heritage: All speed upgrades start at Level 3" are capped at the maximum level (a speed upgrade cannot start above Level 30).
+3. **Tooltip:** Show "Maximum level reached" in the upgrade tooltip.
+4. **No refunds:** If a prestige bonus would set a level above the cap, silently clamp to the cap. Do not refund Stars or compensate.
+5. **Implementation:** In the upgrade purchase function, check `currentLevel < maxLevel` before allowing purchase. Return the state unchanged if at cap.
+
+**Level caps by category (summary):**
+
+| Category | Max Level | Source Table |
+|---|---|---|
+| Cook Speed | 30 | Cooking Speed table above |
+| Sell Speed | 30 | Selling Speed table above |
+| Buy Speed | 20 | Buying Speed table above |
+| Cold Storage | 10 | Cold Storage Capacity table above |
+| Cooking Slots | 10 | Cooking Slots table above |
+| Selling Registers | 10 | Selling Registers table above |
+| Chicken Sale Value | 25 | Chicken Sale Value table above |
+| Customer Tips | 10 | Customer Tips table above |
+| Equipment (varies) | 10-15 | Equipment tables above |
+| Staff (varies) | 6-10 | Staff table above |
+| Manager upgrades | 10 | Doc 004, Manager Upgrade System |
+```
+
 ---
 
 ## Outcome
 
-After completing all 19 steps, the strategy docs will be:
+After completing all 22 steps, the strategy docs will be:
 
 1. **Self-consistent** — no formula contradicts its own table or another doc's statement; recipe unlock thresholds agree across all tables; cold storage specs are unified
 2. **Code-aware** — explicit about where proposed values differ from current code and what to change
 3. **Architecturally specific** — slots, managers, franchises, recipe queues, and offline earnings have concrete data structures and `tick()` integration specs
-4. **Implementation-safe** — cents conversion, level caps, and formula choices are unambiguous
-5. **Properly scoped** — deferred features (customer demand, Golden Drumstick shop) are explicitly marked as out-of-scope for early phases
+4. **Implementation-safe** — cents conversion, level caps, cap behavior, formula choices, and milestone stacking rules are unambiguous
+5. **Properly scoped** — deferred features (customer demand, Golden Drumstick shop, tips, click bonuses, diminishing returns, equipment-recipe bonuses) are explicitly marked as out-of-scope for early phases
 6. **Single source of truth** — when the same data appears in multiple docs, one is designated as canonical with cross-references from the others
+7. **Mechanically complete** — every gameplay system has defined trigger conditions, stacking rules, and edge-case behavior (caps, rounding, retention)
 
 No code changes are required. All changes are to markdown files in `docs/strategy/`.
 
@@ -558,7 +708,17 @@ For quick reference, here is which files each step modifies:
 | File | Steps |
 |---|---|
 | `docs/strategy/002-core-gameplay-loop.md` | 4, 8, 9, 10, 14, 16, 17 |
-| `docs/strategy/003-upgrades-and-enhancements.md` | 1, 2, 3, 4, 5, 6, 16, 18, 19 |
-| `docs/strategy/004-idle-and-automation.md` | 7, 15 |
-| `docs/strategy/005-prestige-and-endgame.md` | 11, 12 |
+| `docs/strategy/003-upgrades-and-enhancements.md` | 1, 2, 3, 4, 5, 6, 16, 18, 19, 20, 21, 22 |
+| `docs/strategy/004-idle-and-automation.md` | 7, 15, 21 |
+| `docs/strategy/005-prestige-and-endgame.md` | 11, 12, 21 |
 | `docs/strategy/006-comprehensive-implementation-strategy.md` | 9, 13 |
+
+### Step dependency order
+
+Most steps are independent, but these have ordering constraints:
+
+| Step | Must Run After | Reason |
+|---|---|---|
+| 16 | 8 | Step 16 replaces the recipe table that Step 8 modified |
+| 19 | 6 | Step 19 adds content after the section Step 6 creates |
+| 22 | 5 | Step 22 references the level caps introduced by Step 5 |
