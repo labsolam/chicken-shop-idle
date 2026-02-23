@@ -27,6 +27,14 @@ These are the ground-truth values in the codebase today:
 
 ---
 
+## Important: Execution Guidance
+
+**Line numbers are approximate.** Several steps edit the same file (`docs/strategy/003-upgrades-and-enhancements.md`). Edits in earlier steps will shift line numbers for later steps. Always locate text by **content search** (search for the quoted text), not by line number. Line numbers are provided only as a starting hint for orientation.
+
+**Code blocks in fix descriptions.** Some steps include TypeScript snippets inside markdown fix descriptions. When inserting these into the strategy docs, use fenced code blocks with the appropriate language tag. If the surrounding context is already inside a markdown code fence, use indented code blocks (4 spaces) instead to avoid nesting conflicts.
+
+---
+
 ## Steps
 
 ### 1. Fix formula contradiction in doc 003 "Core Principle" vs actual formulas
@@ -397,16 +405,160 @@ revenueTracker: {
 Do NOT attempt to compute a theoretical maximum rate from upgrade levels, slot counts, and recipe values. The empirical approach is simpler and more accurate.
 ```
 
+### 16. Fix recipe unlock thresholds that conflict across three locations
+
+- [ ] **File:** `docs/strategy/002-core-gameplay-loop.md` (recipe table, around line 93)
+- [ ] **File:** `docs/strategy/003-upgrades-and-enhancements.md` (Revenue Milestones table, around line 193; Feature Unlock Order table, around line 354)
+
+**Problem:** The same recipe has different unlock conditions depending on which table you read:
+
+| Recipe | Doc 002 recipe table | Doc 003 revenue milestones | Doc 003 unlock order |
+|---|---|---|---|
+| Grilled Chicken | $25 revenue | $50 | $500 total earned |
+| Chicken Wings | $100 revenue | *(250 chickens sold)* | 250 chickens sold |
+| Chicken Burger | $500 revenue | *(not listed)* | $5K total earned |
+| Chicken Katsu | $2,000 revenue | $5,000,000 | *(not listed)* |
+
+An implementing agent would have three "sources of truth" with no guidance on which wins.
+
+**Fix:** Establish doc 003's Feature Unlock Order table (lines 345-368) as the **single source of truth** for all unlock conditions. Then:
+
+1. **In `002-core-gameplay-loop.md`**, update the recipe table Unlock column to match doc 003's unlock order:
+
+```markdown
+| Recipe | Raw Input | Cook Time | Sale Value | Unlock |
+|---|---|---|---|---|
+| Basic Fried Chicken | 1 | 10s | $0.50 | Start |
+| Grilled Chicken | 1 | 15s | $1.00 | $500 total earned |
+| Chicken Wings | 1 | 8s | $0.75 | 250 chickens sold |
+| Chicken Burger | 2 | 20s | $2.00 | $5K total earned |
+| Chicken Katsu | 2 | 25s | $3.50 | $5M total earned |
+| Rotisserie Chicken | 3 | 45s | $8.00 | $5B total earned |
+| Chicken Feast Platter | 5 | 120s | $25.00 | $5T total earned |
+| Signature Dish | 3 | 300s | $100.00 | First prestige |
+```
+
+Add a note below the table:
+
+```markdown
+> **Canonical unlock conditions** are defined in doc 003's Feature Unlock Order table. If any other table in these docs shows a different threshold, doc 003's unlock order takes precedence.
+```
+
+2. **In `003-upgrades-and-enhancements.md`**, update the Revenue Milestones table to match. Replace the Grilled Chicken milestone:
+
+```markdown
+| $500 | Unlock Grilled Chicken recipe |
+```
+
+And add Chicken Burger, which is currently missing from revenue milestones:
+
+```markdown
+| $5,000 | Unlock Chicken Burger recipe |
+```
+
+(This replaces the existing `$5,000 | x2 all revenue` row — move the x2 revenue reward to a chickens-sold milestone or a different revenue threshold to avoid collision.)
+
+### 17. Fix cold storage conflict between doc 002 and doc 003
+
+- [ ] **File:** `docs/strategy/002-core-gameplay-loop.md` (Cold Storage section, around line 57)
+- [ ] **File:** `docs/strategy/003-upgrades-and-enhancements.md` (Cold Storage Capacity table, around line 80)
+
+**Problem:** Doc 002 and doc 003 describe the same upgrade with different values:
+
+| Attribute | Doc 002 | Doc 003 |
+|---|---|---|
+| Number of levels | 7 (10→1000) | 10 (10→25,000) |
+| Cost scaling | 3x per level | ~5x per level |
+| Max capacity | 1,000 | 25,000 |
+
+**Fix:** Doc 003 is the detailed design; doc 002 is the overview. Update doc 002 to defer to doc 003.
+
+Replace the Cold Storage bullet list in `002-core-gameplay-loop.md` (lines 60-64) with:
+
+```markdown
+- Starting capacity: 10 raw chickens
+- If storage is full, cannot buy more
+- Upgrades increase capacity up to 25,000 (10 levels — see doc 003 for exact values and costs)
+- Creates a natural reason to upgrade beyond just "buy more"
+```
+
+### 18. Fix third cost formula in cooking speed table column
+
+- [ ] **File:** `docs/strategy/003-upgrades-and-enhancements.md`
+- [ ] Cooking Speed table, "Cost Formula" column (around line 33)
+
+**Problem:** Step 1 fixes the Core Principle text (`1.15x`) and Step 14 fixes doc 002's matching text. But the Cooking Speed table itself has a third conflicting formula in the "Cost Formula" column: `$5 × 1.15^level × level_factor`. The body text below the table says `cost = baseCost × 2.3^level`. An agent would see two formulas in the same section and not know which to use.
+
+**Fix:** Update the table's Cost Formula column to match the body text formula. Replace line 33:
+
+From:
+```markdown
+| 2 | 7.2s | $12 | $5 × 1.15^level × level_factor |
+```
+
+To:
+```markdown
+| 2 | 7.2s | $12 | `baseCost × 2.3^level` (see formula below table) |
+```
+
+### 19. Specify recipe-aware cooking queue architecture
+
+- [ ] **File:** `docs/strategy/003-upgrades-and-enhancements.md`
+- [ ] After the Parallel Slot Architecture subsection added in Step 6
+
+**Problem:** Step 6 specifies how cooking slots work (batch model with a single timer), but the current code has a single `cookingCount` and `cookingElapsedMs`. With multiple recipes that have **different cook times** (8s for Wings vs 120s for Feast Platter), one shared timer cannot serve recipes with different durations in the same queue. The plan must specify how recipes interact with the cooking queue.
+
+**Fix:** Add a subsection after the Parallel Slot Architecture section:
+
+```markdown
+#### Recipe and Cooking Queue Interaction
+
+**Single active recipe model:**
+
+At any given time, the kitchen cooks ONE recipe type. All cooking slots work on the same recipe. The player (or auto-cook manager) selects which recipe to cook.
+
+- `cookingElapsedMs` tracks progress toward the **active recipe's** cook time
+- When the player switches recipes, any in-progress cooking completes at the old recipe's cook time before the new recipe starts
+- Cooking slots are shared — 3 slots means 3 of the same recipe cook per cycle, not 3 different recipes
+
+**Why not per-slot recipe assignment?**
+- Per-slot recipes would require an array of `{ recipe, elapsedMs }` per slot — O(slots) complexity
+- It complicates the UI (which recipe is in which slot?)
+- It complicates offline earnings (multiple cook-time rates simultaneously)
+- Most idle games use the single-active-production model (Egg Inc, Melvor Idle)
+- Strategic recipe switching is more interesting than parallel recipe mixing
+
+**GameState additions:**
+- `activeRecipe: string` — ID of the currently selected recipe (e.g., `"basic_fried"`)
+- The existing `cookTimeSeconds` field is replaced by a per-recipe lookup: `RECIPES[activeRecipe].cookTimeSeconds`
+- `cookingCount` still represents how many units of the active recipe are queued/cooking
+
+**Future consideration:** If a "Recipe Queue" feature is added in late-game (Phase 5+), it could allow the player to queue a sequence of recipes. But this is out of scope for Phase 1.
+```
+
 ---
 
 ## Outcome
 
-After completing all 15 steps, the strategy docs will be:
+After completing all 19 steps, the strategy docs will be:
 
-1. **Self-consistent** — no formula contradicts its own table or another doc's statement
+1. **Self-consistent** — no formula contradicts its own table or another doc's statement; recipe unlock thresholds agree across all tables; cold storage specs are unified
 2. **Code-aware** — explicit about where proposed values differ from current code and what to change
-3. **Architecturally specific** — slots, managers, franchises, and offline earnings have concrete data structures and `tick()` integration specs
+3. **Architecturally specific** — slots, managers, franchises, recipe queues, and offline earnings have concrete data structures and `tick()` integration specs
 4. **Implementation-safe** — cents conversion, level caps, and formula choices are unambiguous
 5. **Properly scoped** — deferred features (customer demand, Golden Drumstick shop) are explicitly marked as out-of-scope for early phases
+6. **Single source of truth** — when the same data appears in multiple docs, one is designated as canonical with cross-references from the others
 
 No code changes are required. All changes are to markdown files in `docs/strategy/`.
+
+### Step-to-file index
+
+For quick reference, here is which files each step modifies:
+
+| File | Steps |
+|---|---|
+| `docs/strategy/002-core-gameplay-loop.md` | 4, 8, 9, 10, 14, 16, 17 |
+| `docs/strategy/003-upgrades-and-enhancements.md` | 1, 2, 3, 4, 5, 6, 16, 18, 19 |
+| `docs/strategy/004-idle-and-automation.md` | 7, 15 |
+| `docs/strategy/005-prestige-and-endgame.md` | 11, 12 |
+| `docs/strategy/006-comprehensive-implementation-strategy.md` | 9, 13 |
