@@ -14,7 +14,7 @@ Upgrades are the primary way players feel progress. Drawing from research across
 - **Idle Miner Tycoon:** Boost milestones (2x at levels 10, 25, 50, 100) are simple but effective.
 - **NGU Idle:** Gradual system reveals prevent overwhelm while maintaining long-term discovery.
 
-**Core Principle:** Cost grows exponentially (1.15x per level), revenue grows slightly slower (1.10x per level). This guarantees eventual slowdown and creates natural prestige timing.
+**Core Principle:** Costs grow exponentially (scaling factor varies by category: 2.3x for speed, 3.5x for value, etc.), while revenue grows at a slower polynomial rate (~1.10-1.20x per upgrade). This guarantees eventual slowdown and creates natural prestige timing. See "Scaling Factors by Category" table below for exact rates.
 
 ---
 
@@ -30,7 +30,7 @@ These reduce the time for each stage of the pipeline.
 |---|---|---|---|
 | 0 (base) | 10.0s | — | — |
 | 1 | 8.5s | $5 | Base |
-| 2 | 7.2s | $12 | $5 × 1.15^level × level_factor |
+| 2 | 7.2s | $12 | `baseCost × 2.3^level` (see formula below table) |
 | 3 | 6.1s | $28 | |
 | 4 | 5.2s | $64 | |
 | 5 | 4.4s | $147 | |
@@ -42,6 +42,18 @@ These reduce the time for each stage of the pipeline.
 
 **Formula:** `cookTime = baseTime × 0.85^level` (diminishing returns naturally)
 **Cost Formula:** `cost = baseCost × 2.3^level`
+
+#### Migration from Current Code
+
+The existing `src/engine/buy.ts` uses different formulas (`cost = 500 × 1.5^level`, `cookTime = base × 0.9^level`, `value = base + level × 25`). When implementing the expanded upgrade system:
+
+1. **Replace** the current cost formula (`1.5^level`) with the category-specific scaling factors in this document
+2. **Replace** the cook time formula (`0.9^level`) with `0.85^level`
+3. **Replace** the linear value formula with the multiplier lookup table
+4. **Add** a level cap (30 for speed, 25 for value, 10 for capacity/slots)
+5. **Add** `sellSpeedLevel` to `GameState` (currently missing — sell speed has no upgrade in the code)
+6. **Update** all existing tests in `tests/engine/buy.test.ts` to use the new formulas
+7. **Preserve** the existing `UpgradeType` pattern but expand it to cover all 6+ categories
 
 #### Selling Speed
 
@@ -91,6 +103,8 @@ These increase how much you can store/process at once.
 | 9 | 10,000 | $10M |
 | 10 (cap) | 25,000 | $75M |
 
+> **Implementation note:** Cold storage costs are hand-tuned, not generated from a strict ×5 formula. Use the table values directly as a lookup rather than computing `baseCost × 5^level`. All dollar values must be converted to cents for implementation (e.g., $15 → 1500 cents).
+
 #### Cooking Slots (Parallel Processing)
 
 Inspired by **Egg Inc's** hen house expansion:
@@ -123,6 +137,61 @@ Same structure as cooking slots, slightly cheaper (selling is downstream).
 | ... | ... | ... |
 | 10 (cap) | 30 | $30B |
 
+#### Parallel Slot Architecture
+
+**How slots affect `tick()`:**
+
+Slots do NOT create independent parallel timers. Instead, they act as a throughput multiplier on the existing single-timer model:
+
+- The game still tracks one `cookingElapsedMs` timer
+- When the timer completes (reaches `cookTimeMs`), `min(cookingCount, cookingSlots)` chickens are completed simultaneously
+- The timer then resets for the next batch
+- This means N slots = N chickens cooked per timer cycle, not N independent timers
+
+**Rationale:** Independent parallel timers would create O(slots) complexity in `tick()`, complicate the UI (showing N progress bars), and make offline earnings calculation much harder. The batch model is simpler, produces nearly identical throughput, and is how most idle games handle parallel processing (e.g., Idle Miner Tycoon's shaft model).
+
+**Implementation:**
+```typescript
+// In tick(), replace the single-chicken completion with:
+while (cookingCount > 0 && cookingElapsedMs >= cookTimeMs) {
+  const completedThisCycle = Math.min(cookingCount, cookingSlots);
+  cookingCount -= completedThisCycle;
+  chickensReady += completedThisCycle;
+  totalChickensCooked += completedThisCycle;
+  cookingElapsedMs -= cookTimeMs;
+}
+```
+
+**GameState additions:**
+```typescript
+cookingSlots: number;    // starts at 1, increased by upgrade
+sellingRegisters: number; // starts at 1, increased by upgrade
+```
+
+#### Recipe and Cooking Queue Interaction
+
+**Single active recipe model:**
+
+At any given time, the kitchen cooks ONE recipe type. All cooking slots work on the same recipe. The player (or auto-cook manager) selects which recipe to cook.
+
+- `cookingElapsedMs` tracks progress toward the **active recipe's** cook time
+- When the player switches recipes, any in-progress cooking completes at the old recipe's cook time before the new recipe starts
+- Cooking slots are shared — 3 slots means 3 of the same recipe cook per cycle, not 3 different recipes
+
+**Why not per-slot recipe assignment?**
+- Per-slot recipes would require an array of `{ recipe, elapsedMs }` per slot — O(slots) complexity
+- It complicates the UI (which recipe is in which slot?)
+- It complicates offline earnings (multiple cook-time rates simultaneously)
+- Most idle games use the single-active-production model (Egg Inc, Melvor Idle)
+- Strategic recipe switching is more interesting than parallel recipe mixing
+
+**GameState additions:**
+- `activeRecipe: string` — ID of the currently selected recipe (e.g., `"basic_fried"`)
+- The existing `cookTimeSeconds` field is replaced by a per-recipe lookup: `RECIPES[activeRecipe].cookTimeSeconds`
+- `cookingCount` still represents how many units of the active recipe are queued/cooking
+
+**Future consideration:** If a "Recipe Queue" feature is added in late-game (Phase 5+), it could allow the player to queue a sequence of recipes. But this is out of scope for Phase 1.
+
 ---
 
 ### Category 3: Value Upgrades (Reward System)
@@ -134,6 +203,8 @@ These increase how much money you earn per sale.
 | Level | Multiplier | Cost | Cumulative Effect |
 |---|---|---|---|
 | 0 | 1.0x | — | $0.50 per basic chicken |
+
+> **Note:** Base value of $0.50 assumes the recipe system from doc 002 is implemented. The current code uses $1.00 (`chickenPriceInCents: 100`). Update the code to $0.50 when implementing the recipe system.
 | 1 | 1.2x | $10 | $0.60 |
 | 2 | 1.4x | $35 | $0.70 |
 | 3 | 1.7x | $120 | $0.85 |
@@ -144,8 +215,11 @@ These increase how much money you earn per sale.
 | 20 | 20.0x | $3B | $10.00 |
 | 25 (cap) | 50.0x | $400B | $25.00 |
 
-**Formula:** `saleValue = baseValue × (1 + 0.2 × level)^1.3`
-**Cost Formula:** `cost = 10 × 3.5^level`
+**Formula:** Sale value multipliers are hand-tuned per level (see table above). No single closed-form formula applies. For implementation, store the multiplier values in a lookup table or use a piecewise function.
+
+**Approximate formula** (for interpolating unlisted levels): `saleValue ≈ baseValue × (1 + 0.2 × level)` for levels 0-4, transitioning to exponential growth for levels 5+.
+
+**Cost Formula:** `cost = 10 × 3.5^level` (in dollars; convert to cents for implementation: `1000 × 3.5^level`)
 
 #### Customer Tips
 
@@ -160,6 +234,10 @@ A secondary value multiplier, unlocked mid-game:
 | 4 | 20% | +50% bonus | $600K |
 | 5 | 25% | +75% bonus | $3M |
 | 10 (cap) | 50% | +200% bonus | $5B |
+
+> **Implementation phasing:** The tips system is a **Phase 2 feature** (alongside manager automation). Although the unlock order below places it at $5K earned (~45 min), this reflects in-game unlock timing, not implementation phase. Implement it in Phase 2 when managers and idle income are added. For Phase 1, tips do not exist.
+>
+> **Tip trigger:** Tips are a per-sale random check. When a sale completes, roll against the tip chance percentage. If successful, add the tip bonus to that sale's revenue. Tips apply per individual chicken sold, not per batch.
 
 ---
 
@@ -190,9 +268,10 @@ Inspired by **AdVenture Capitalist's** milestone system and **Idle Miner Tycoon'
 
 | Milestone | Reward |
 |---|---|
-| $50 | Unlock Grilled Chicken recipe |
+| $500 | Unlock Grilled Chicken recipe |
 | $500 | Unlock second cooking slot hint |
 | $5,000 | x2 all revenue |
+| $5,000 | Unlock Chicken Burger recipe |
 | $50,000 | Unlock Bulk Buy (x10) |
 | $500,000 | x3 all revenue |
 | $5,000,000 | Unlock Chicken Katsu recipe |
@@ -204,6 +283,18 @@ Inspired by **AdVenture Capitalist's** milestone system and **Idle Miner Tycoon'
 | $5T | Unlock Chicken Feast recipe |
 | $50T | x100 all revenue |
 | $500T | Prestige layer 2 unlock |
+
+#### Milestone Reward Rules
+
+1. **Stacking:** All milestone multipliers are permanent within a prestige run and stack **multiplicatively**. If you earn "x2 sale value" at 10 chickens and another "x2 sale value" at 100 chickens, your total sale value multiplier from milestones is x4.
+
+2. **Simultaneous triggers:** When multiple milestones are reached in a single tick (e.g., after offline earnings), ALL eligible milestone rewards are applied at once. Process them in ascending order (lowest threshold first).
+
+3. **Permanence:** Milestone multipliers are permanent once earned within a prestige run. They are NOT timed boosts.
+
+4. **Prestige reset:** All milestone progress AND milestone rewards reset on prestige. The multipliers must be re-earned each run. This is intentional — milestones act as a "run accelerator" that makes each prestige cycle feel progressively faster as the player reaches milestones more quickly with Star bonuses.
+
+5. **Implementation:** Track earned milestones as a `Set<string>` of milestone IDs in GameState. On each tick, check if any new milestone thresholds have been crossed and apply their rewards. Combine all active milestone multipliers into a single `milestoneMultiplier` used in the revenue formula (doc 006, Revenue Formula).
 
 ---
 
@@ -224,6 +315,19 @@ Equipment provides passive bonuses and can be upgraded.
 | Rotisserie Spit | Enables Rotisserie Chicken, +10% all value | 10 | $500K base, x2.5 per level |
 | Chef's Wok | +30% cook speed, +20% value for stir-fry items | 15 | $1M base, x2 per level |
 | Smoker | Enables Smoked Chicken, +35% value | 10 | $5M base, x3 per level |
+
+> **Recipe type definitions:** Equipment bonuses reference recipe categories ("fried items", "grilled items", "stir-fry items"). Each recipe must be tagged with one or more types. Mapping:
+> - **Fried:** Basic Fried Chicken, Chicken Katsu
+> - **Grilled:** Grilled Chicken
+> - **Wings:** Chicken Wings
+> - **Burger:** Chicken Burger
+> - **Roasted:** Rotisserie Chicken
+> - **Stir-fry:** *(future recipe, not in current list)*
+> - **Smoked:** *(requires Smoker equipment)*
+>
+> Equipment bonuses that reference a recipe type apply only when that recipe is the active recipe. If an equipment item gives "+15% value for fried items," it only applies while cooking/selling fried recipes.
+>
+> **Implementation phasing:** Equipment is a **Phase 3 feature**. Do NOT implement in Phases 1-2.
 
 #### Front-of-House Equipment
 
@@ -277,7 +381,7 @@ Following the research from Kongregate's "Math of Idle Games":
 
 ```
 Revenue growth per upgrade: ~1.10-1.20x (linear to low polynomial)
-Cost growth per upgrade:    ~1.15-2.30x (exponential)
+Cost growth per upgrade:    ~2.0-5.0x (exponential, varies by category)
 ```
 
 This guarantees that at some point costs overtake revenue, creating the prestige wall. The exact timing depends on which upgrades the player chooses, creating strategic depth.
@@ -289,6 +393,32 @@ This guarantees that at some point costs overtake revenue, creating the prestige
 - **Hours 3-8:** New upgrades every 10-30 minutes
 - **Hours 8-12:** New upgrades every 30-60 minutes (prestige wall approaching)
 - **Post-first prestige:** Cycle restarts but 2-3x faster due to prestige bonuses
+
+#### Upgrade Cap Behavior
+
+When an upgrade reaches its maximum level:
+
+1. **UI:** The upgrade button shows "MAX" instead of a cost. The button is disabled (greyed out, not clickable).
+2. **No overflow:** The level cannot exceed the cap under any circumstances. Prestige bonuses like "Speed Heritage: All speed upgrades start at Level 3" are capped at the maximum level (a speed upgrade cannot start above Level 30).
+3. **Tooltip:** Show "Maximum level reached" in the upgrade tooltip.
+4. **No refunds:** If a prestige bonus would set a level above the cap, silently clamp to the cap. Do not refund Stars or compensate.
+5. **Implementation:** In the upgrade purchase function, check `currentLevel < maxLevel` before allowing purchase. Return the state unchanged if at cap.
+
+**Level caps by category (summary):**
+
+| Category | Max Level | Source Table |
+|---|---|---|
+| Cook Speed | 30 | Cooking Speed table above |
+| Sell Speed | 30 | Selling Speed table above |
+| Buy Speed | 20 | Buying Speed table above |
+| Cold Storage | 10 | Cold Storage Capacity table above |
+| Cooking Slots | 10 | Cooking Slots table above |
+| Selling Registers | 10 | Selling Registers table above |
+| Chicken Sale Value | 25 | Chicken Sale Value table above |
+| Customer Tips | 10 | Customer Tips table above |
+| Equipment (varies) | 10-15 | Equipment tables above |
+| Staff (varies) | 6-10 | Staff table above |
+| Manager upgrades | 10 | Doc 004, Manager Upgrade System |
 
 ---
 

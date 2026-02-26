@@ -38,6 +38,31 @@ Once all three Tier 1 managers are hired, the core loop is fully automated. This
 
 **Target timing:** Players should be able to afford all three Tier 1 managers after ~2-3 hours of active play.
 
+#### Manager Automation Mechanics
+
+**How managers work in `tick()`:**
+
+Each manager has an internal action interval (in milliseconds). On every tick, the manager's elapsed time is advanced. When it reaches the interval, the manager performs one action:
+
+| Manager | Base Interval | Action Per Trigger |
+|---|---|---|
+| Buyer Bob | 3000ms (3s) | Buys `min(batchSize, coldStorageRemaining)` raw chickens |
+| Chef Carmen | 2000ms (2s) | Queues `min(batchSize, rawChickensAvailable)` for cooking |
+| Seller Sam | 2000ms (2s) | Queues `min(batchSize, chickensReady)` for selling |
+
+- **Base batch size:** 1 (at Level 1)
+- **"+25% speed"** means the action interval is reduced by 25%: `interval = baseInterval × (1 - speedBonus)`. At Level 2 (+25% speed), Buyer Bob acts every 2250ms instead of 3000ms.
+- **Batch size** increases at levels 5, 6, 7, 8, 9, 10 as listed in the upgrade table
+
+**GameState additions:**
+```typescript
+managers: {
+  buyer: { hired: boolean; level: number; elapsedMs: number };
+  cook:  { hired: boolean; level: number; elapsedMs: number };
+  sell:  { hired: boolean; level: number; elapsedMs: number };
+};
+```
+
 #### Tier 2: Efficiency Managers (Improve Automation)
 
 | Manager | Job | Unlock | Hire Cost | Effect |
@@ -128,6 +153,31 @@ Where:
   offlineEfficiency = 0.30 + (offlineUpgradeLevel × 0.05)  // 30% base, up to 80%
   prestigeMultiplier = 1 + (stars × starBonus)
 ```
+
+#### Computing baseRate
+
+The `baseRate` is a snapshot of actual revenue per second at the moment the game closes. It should be computed as:
+
+```
+baseRate = actualRevenueEarnedInLastNSeconds / N
+```
+
+Where N = 60 (use the last 60 seconds of real gameplay as the sample window). This approach:
+- Automatically accounts for bottlenecks (the slowest stage limits throughput)
+- Handles multiple recipes (weighted by what was actually being cooked)
+- Avoids complex theoretical calculations
+- Is simple to implement: just track `revenueLastNSeconds` as a rolling counter in GameState
+
+**GameState addition:**
+```typescript
+revenueTracker: {
+  recentRevenueCents: number; // revenue earned in current tracking window
+  trackerElapsedMs: number;   // elapsed time in current window
+  lastComputedRatePerMs: number; // cached rate from last completed window
+};
+```
+
+Do NOT attempt to compute a theoretical maximum rate from upgrade levels, slot counts, and recipe values. The empirical approach is simpler and more accurate.
 
 ### Offline Earnings Cap
 
@@ -279,6 +329,11 @@ Research consistently recommends 60% idle / 40% active for optimal engagement:
 
 2. **Active bonus (40%):**
    - Click bonuses: Clicking during automation gives small bonus income
+
+> **Click bonus implementation:** Click bonuses are a **Phase 2+ feature**, deferred until the manager system exists (clicking during manual play is the baseline, not a bonus). When implemented:
+> - Clicking Buy/Cook/Sell while the corresponding manager is active gives a one-time bonus equal to 10% of one automated action's revenue
+> - Clicking has a 1-second internal cooldown to prevent autoclicker abuse
+> - This is intentionally a small bonus — it rewards checking in without punishing idle-only players
    - Super Manager abilities: Must be manually activated, provide huge temporary boosts
    - Recipe optimization: Actively switching recipes based on what's needed
    - Strategic upgrade purchasing: Choosing the right upgrade at the right time
@@ -288,6 +343,13 @@ Research consistently recommends 60% idle / 40% active for optimal engagement:
 
 To prevent the game from being trivially "solved" by leaving it open forever:
 - **Diminishing returns on long sessions:** After 8 hours of continuous idle, earnings slowly decrease to 80%, then 60%
+
+> **Diminishing returns implementation:** This is a **Phase 3+ feature** — do NOT implement in Phases 1-2. When implemented:
+> - After 8 hours of continuous idle (tab open, no clicks), earnings reduce to 80% over the next 2 hours (linear ramp)
+> - After 10 hours, earnings cap at 60% (does not decrease further)
+> - Any click or manual action resets the timer
+> - Closing and reopening the tab resets the timer (uses offline earnings for the gap, then fresh idle timer)
+> - This mechanic exists to encourage daily check-ins, not to punish idle play
 - **Daily login bonus:** Encourages closing and reopening (which also triggers offline earnings display)
 - **Energy system for Super Managers:** Abilities recharge on real-time cooldowns, not game-time
 

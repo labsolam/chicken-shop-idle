@@ -59,8 +59,7 @@ Each stage becomes a "department" with its own capacity, speed, and upgrade path
 Inspired by **Idle Miner Tycoon's** elevator bottleneck:
 - Starting capacity: 10 raw chickens
 - If storage is full, cannot buy more
-- Upgrades increase capacity: 10 -> 25 -> 50 -> 100 -> 250 -> 500 -> 1000
-- Cost scaling: each level costs 3x the previous level
+- Upgrades increase capacity up to 25,000 (10 levels — see doc 003 for exact values and costs)
 - Creates a natural reason to upgrade beyond just "buy more"
 
 ---
@@ -88,16 +87,22 @@ Inspired by **Idle Miner Tycoon's** elevator bottleneck:
 
 Inspired by **Melvor Idle's** interconnected skills:
 
-| Recipe | Cook Time | Sale Value | Unlock |
-|---|---|---|---|
-| Basic Fried Chicken | 10s | $0.50 | Start |
-| Grilled Chicken | 15s | $1.00 | $25 revenue |
-| Chicken Wings | 8s | $0.75 | $100 revenue |
-| Chicken Burger | 20s | $2.00 | $500 revenue |
-| Chicken Katsu | 25s | $3.50 | $2,000 revenue |
-| Rotisserie Chicken | 45s | $8.00 | $10,000 revenue |
-| Chicken Feast Platter | 120s | $25.00 | $100,000 revenue |
-| Signature Dish | 300s | $100.00 | First prestige |
+> **Breaking change from current code:** The existing codebase uses a $1.00 base sale price (`chickenPriceInCents: 100`). The recipe system replaces this with recipe-specific values starting at $0.50. The implementing agent must update `chickenPriceInCents` in `game-state.ts` accordingly, or replace the single price field with per-recipe pricing. The raw chicken cost remains $0.25.
+
+| Recipe | Raw Input | Cook Time | Sale Value | Unlock |
+|---|---|---|---|---|
+| Basic Fried Chicken | 1 | 10s | $0.50 | Start |
+| Grilled Chicken | 1 | 15s | $1.00 | $500 total earned |
+| Chicken Wings | 1 | 8s | $0.75 | 250 chickens sold |
+| Chicken Burger | 2 | 20s | $2.00 | $5K total earned |
+| Chicken Katsu | 2 | 25s | $3.50 | $5M total earned |
+| Rotisserie Chicken | 3 | 45s | $8.00 | $5B total earned |
+| Chicken Feast Platter | 5 | 120s | $25.00 | $5T total earned |
+| Signature Dish | 3 | 300s | $100.00 | First prestige |
+
+> **Canonical unlock conditions** are defined in doc 003's Feature Unlock Order table. If any other table in these docs shows a different threshold, doc 003's unlock order takes precedence.
+
+> **Design note:** Multi-chicken recipes create an additional supply-chain bottleneck. A Chicken Feast Platter consuming 5 raw chickens means cold storage drains 5x faster when cooking platters, creating meaningful strategic tension between recipe choice and supply management.
 
 Each recipe has independent cook time reduction upgrades. Higher-value recipes take longer but are more profitable per unit of time once upgraded.
 
@@ -132,6 +137,8 @@ Inspired by **Idle Miner Tycoon's** warehouse pacing:
 - Customer patience upgradable
 - Creating a pull-based system where you need to keep up with demand
 
+> **Implementation phasing:** The customer demand system is a **Phase 2+ feature**, implemented alongside the manager system. In Phase 1, selling remains push-based (player clicks Sell, sale happens). The customer arrival/departure mechanic is optional flavor that can be deferred to Phase 3 or later without affecting core gameplay. Do NOT implement this in Phase 1.
+
 ---
 
 ## Revenue & Economy
@@ -152,11 +159,13 @@ Profit  = Revenue - Cost
 | **Stars** | Prestige (reset) | Permanent bonuses, unlock new features |
 | **Golden Drumsticks** | Achievements, milestones | Premium upgrades, cosmetics, time skips |
 
+> **Implementation note:** The Golden Drumstick shop is **not in scope for Phases 1-4**. For now, Golden Drumsticks are tracked as a counter (earned via achievements) but have no spending mechanic. The shop will be designed and implemented in Phase 5 or later. Do NOT implement a GD shop until a dedicated design doc specifies purchasable items.
+
 ### Economic Pacing
 
 Following the research on exponential cost vs polynomial revenue:
-- **Upgrade costs:** Grow at 1.15x per level (base)
-- **Revenue growth:** Grows at ~1.10x per upgrade level
+- **Upgrade costs:** Grow exponentially per level (scaling factor varies: 2.3x for speed, 3.5x for value, 2.0-5.0x for other categories — see doc 003 for details)
+- **Revenue growth:** Grows at ~1.10-1.20x per upgrade level (polynomial, slower than costs)
 - This ensures costs eventually outpace revenue, creating natural prestige points
 - Target: First prestige wall at ~2-3 hours of active play
 

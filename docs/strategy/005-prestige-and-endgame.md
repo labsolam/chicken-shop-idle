@@ -60,9 +60,12 @@ Stars earned = floor(sqrt(lifetimeRevenue / 1,000,000))
 | All upgrades (speed, capacity, value) | **Star Upgrades** (permanent purchases) |
 | Equipment levels | **Super Managers** |
 | Staff levels | **Recipes unlocked** |
-| Manager levels (but not unlock status) | **Achievements** |
+| Manager **levels** (reset to 1 or Star-boosted level) | Manager **unlock status** (don't need to re-hire) |
+| | **Achievements** |
 | Milestone progress | **Golden Drumsticks** |
 | | **Offline earning upgrades** |
+
+> **Manager prestige behavior:** When you prestige, each hired manager stays hired (you do NOT pay the hire cost again). However, their upgrade level resets to 1 (or to the level specified by "Manager Expertise" Star upgrades, if purchased). This means the hire cost is a one-time investment across all prestiges, but upgrade levels must be re-earned each run.
 
 ### Star Upgrade Tree
 
@@ -88,6 +91,8 @@ Stars are spent on permanent bonuses that persist across all future prestiges.
 | Manager Expertise I | 100 Stars | Managers start at Level 2 |
 | Kitchen Memory II | 100 Stars | All speed upgrades cost 30% less |
 | Equipment Retention I | 125 Stars | Keep 25% of equipment levels through prestige |
+
+> **Equipment retention rounding:** "Keep 25% of equipment levels" means each individual equipment item's level is multiplied by the retention percentage and **rounded down** (floor). An item at Level 1 floors to Level 0 (fully reset). An item at Level 4 keeps Level 1. An item at Level 10 keeps Level 2 (at 25%) or Level 5 (at 50%). This is a **Phase 4 feature** (prestige system).
 | Quick Start III | 150 Stars | Start each run with $5,000 |
 | Bulk Mastery | 150 Stars | Unlock max bulk buy from the start |
 | Offline Earner II | 175 Stars | Offline duration cap +4 hours |
@@ -104,6 +109,14 @@ Stars are spent on permanent bonuses that persist across all future prestiges.
 | Star Power I | 500 Stars | Each unspent Star gives +0.5% revenue |
 | Quick Start IV | 500 Stars | Start each run with $50,000 |
 | Permanent Slot I | 600 Stars | Keep ONE upgrade through prestige (player's choice) |
+
+> **Permanent slot mechanics:** When the player purchases "Permanent Slot I," they choose ONE upgrade to carry through prestige. Rules:
+> - The selection is made via a UI prompt after purchasing the Star upgrade
+> - The player can change their selection at any time before prestiging (it's not locked)
+> - The carried upgrade keeps both its level AND accumulated cost (so continuing to upgrade it uses the expected cost curve, not a reset curve)
+> - Only base upgrades qualify (speed, capacity, value categories) — not equipment, staff, or managers
+> - "Permanent Slot II" adds a second independent selection
+> - This is a **Phase 4 feature** (prestige system)
 | Staff Retention I | 700 Stars | Staff start at 50% of pre-prestige levels |
 | Offline Earner III | 750 Stars | Offline efficiency +20% |
 
@@ -216,6 +229,32 @@ Each location is a semi-independent chicken shop that runs in parallel:
 | Food Court | Location Slot I | Fast recipes only | x2 speed, x0.7 value |
 | Uptown | Location Slot II | Premium recipes only | x0.5 speed, x3 value |
 | Airport | Location Slot III | All recipes | x2 customer rate, x1.5 value |
+
+#### Location Interaction Model
+
+**Tab-based switching** (inspired by AdVenture Capitalist's planet system):
+
+- The main UI has a location selector (tabs or dropdown) at the top
+- Only ONE location is "active" (visible) at a time
+- Switching is instant — just changes which sub-state the UI renders
+- ALL locations run their `tick()` processing in parallel regardless of which is active
+- A summary bar always shows combined $/sec across all locations
+- Each location has its own complete sub-state: managers, upgrades, equipment, recipes, timers
+- Managers and staff are per-location (hiring a cook at Downtown does not give Food Court a cook)
+- Super Managers are global — their abilities affect ALL locations simultaneously
+
+**GameState structure:**
+```typescript
+franchiseLocations: Array<{
+  id: string;
+  name: string;
+  specialty: 'general' | 'fast' | 'premium' | 'all';
+  speedMultiplier: number;
+  valueMultiplier: number;
+  state: BaseGameState; // same shape as the non-franchise GameState
+}>;
+activeLocationIndex: number;
+```
 
 ---
 

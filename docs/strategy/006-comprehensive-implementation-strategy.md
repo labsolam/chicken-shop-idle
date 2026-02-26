@@ -98,6 +98,7 @@ Based on analysis of 10 successful idle games and industry best practices, this 
 5. Efficiency managers (speed boost, batch operations, quality)
 6. Recipe specialist managers
 7. Income/second display and projected earnings
+8. Customer demand system (customer arrival rate, lost sales tracking)
 
 **State Changes:**
 - `GameState` gains: `managers`, `managerLevels`, `lastOnlineTimestamp`
@@ -332,6 +333,14 @@ The UI should grow with the player, not overwhelm them at the start.
 ---
 
 ## Technical Considerations
+
+### Currency Convention
+
+> **CRITICAL:** All dollar amounts in these strategy documents ($5, $10, $50K, etc.) must be converted to **integer cents** for implementation. The codebase uses cents exclusively to avoid floating-point errors (see decision `docs/decisions/002-money-as-cents.md`).
+>
+> Examples: $5 → 500, $0.50 → 50, $50K → 5_000_000, $1B → 100_000_000_000
+>
+> When numbers exceed `Number.MAX_SAFE_INTEGER` (9,007,199,254,740,991 cents ≈ $90 trillion), a BigInt or big-number library will be needed. This is expected to occur in late-game prestige runs.
 
 ### Preserving Architecture
 
