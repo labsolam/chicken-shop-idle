@@ -40,6 +40,8 @@ You've made your chicken shop as good as it can be. Time to tear up the menu, re
 Stars earned = floor(sqrt(lifetimeRevenue / 1,000,000))
 ```
 
+> **Units:** The formula above uses **dollar amounts** for readability. Since the codebase stores all money as integer cents (decision 002), the implementation must convert: `floor(sqrt(lifetimeRevenueCents / 100_000_000))`. The divisor is $1,000,000 expressed in cents (1,000,000 × 100 = 100,000,000).
+
 | Lifetime Revenue | Stars Earned |
 |---|---|
 | $1B | 31 |

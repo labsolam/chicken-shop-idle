@@ -210,34 +210,36 @@ Based on analysis of 10 successful idle games and industry best practices, this 
 ### Revenue Formula (Complete)
 
 ```
-chickenValue = baseRecipeValue
-             × saleValueUpgradeMultiplier
-             × (1 + tipChance × tipBonus)
-             × equipmentMultiplier
-             × staffMultiplier
-             × milestoneMultiplier
-             × starMultiplier
-             × crownMultiplier
-             × diamondMultiplier
-             × (1 + unspentStars × starPowerBonus)
+chickenValue = baseRecipeValue              (doc 002: Recipe table)
+             × saleValueUpgradeMultiplier   (doc 003: Chicken Sale Value table — multiplier, NOT additive)
+             × (1 + tipChance × tipBonus)   (doc 003: Customer Tips table — Phase 2 feature)
+             × equipmentMultiplier          (doc 003: Equipment tables — Phase 3 feature)
+             × staffMultiplier              (doc 003: Staff table — Phase 3 feature)
+             × milestoneMultiplier          (doc 003: Milestone tables — multiplicative stacking)
+             × starMultiplier               (doc 005: Reputation Star upgrades)
+             × crownMultiplier              (doc 005: Brand Recognition Crown upgrades)
+             × diamondMultiplier            (doc 005: Dynasty Diamond upgrades)
+             × (1 + unspentStars × starPowerBonus)  (doc 005: Star Power I = 0.005/star, II = 0.01/star)
 
 revenuePerSecond = chickenValue × chickensPerSecond
 
 chickensPerSecond = min(supplyRate, cookRate, sellRate)
-  where each rate = (slots × batchSize) / adjustedTime
+  where each rate = (slots × batchSize) / adjustedTime  (doc 003: Parallel Slot Architecture)
 ```
 
 ### Cost Curve Summary
 
-| Upgrade Type | Base Cost | Scaling | Cap |
-|---|---|---|---|
-| Cook/Sell Speed | $5 | ×2.3/level | Level 30 |
-| Cold Storage | $15 | ×5/level | Level 10 |
-| Cooking/Selling Slots | $50/$30 | ×10/level | Level 10 |
-| Sale Value | $10 | ×3.5/level | Level 25 |
-| Equipment | Varies | ×2-3/level | Level 10-15 |
-| Staff | Varies | ×2.5/level | Level 10 |
-| Managers | Varies | ×5/level (upgrades) | Level 10 |
+> **Migration note:** These scaling factors replace the existing code's uniform ×1.5 formula. See doc 003 "Migration from Current Code" section for the step-by-step migration plan. Cold Storage costs are hand-tuned (use doc 003's lookup table, not the ×5 formula). All dollar values must be converted to cents for implementation.
+
+| Upgrade Type | Base Cost | Scaling | Cap | Details |
+|---|---|---|---|---|
+| Cook/Sell Speed | $5 | ×2.3/level | Level 30 | Doc 003: Cooking/Selling Speed tables |
+| Cold Storage | $15 | Hand-tuned | Level 10 | Doc 003: Cold Storage table (use lookup, not formula) |
+| Cooking/Selling Slots | $50/$30 | ×10/level | Level 10 | Doc 003: Cooking Slots / Selling Registers tables |
+| Sale Value | $10 | ×3.5/level | Level 25 | Doc 003: Chicken Sale Value (multiplier, not additive) |
+| Equipment | Varies | ×2-3/level | Level 10-15 | Doc 003: Equipment tables (Phase 3) |
+| Staff | Varies | ×2.5/level | Level 10 | Doc 003: Staff table (Phase 3) |
+| Managers | Varies | ×5/level (upgrades) | Level 10 | Doc 004: Manager Upgrade System (Phase 2) |
 
 ### Prestige Math
 
@@ -247,11 +249,13 @@ Layer 2 (Crowns):   floor(totalStarsEarned / 500)
 Layer 3 (Diamonds): floor(totalCrownsEarned / 25)
 ```
 
+> **Units:** `lifetimeRevenue` in the Stars formula is in dollars. Since the codebase uses cents, implement as `floor(sqrt(lifetimeRevenueCents / 100_000_000))`. See doc 005 for verification table and full details on all three layers.
+
 ### Pacing Checkpoints
 
 | Checkpoint | Target Time (Active) | Target Revenue |
 |---|---|---|
-| First upgrade affordable | 30 seconds | $5 starting cash |
+| First upgrade affordable | ~0 seconds | $5 starting cash (speed upgrades cost $5 at Lv.0) |
 | All basic upgrades tried | 10 minutes | ~$100 |
 | First recipe unlocked | 15 minutes | ~$500 |
 | First manager affordable | 2 hours | ~$25K |
