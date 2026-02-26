@@ -203,8 +203,6 @@ These increase how much money you earn per sale.
 | Level | Multiplier | Cost | Cumulative Effect |
 |---|---|---|---|
 | 0 | 1.0x | — | $0.50 per basic chicken |
-
-> **Note:** Base value of $0.50 assumes the recipe system from doc 002 is implemented. The current code uses $1.00 (`chickenPriceInCents: 100`). Update the code to $0.50 when implementing the recipe system.
 | 1 | 1.2x | $10 | $0.60 |
 | 2 | 1.4x | $35 | $0.70 |
 | 3 | 1.7x | $120 | $0.85 |
@@ -214,6 +212,8 @@ These increase how much money you earn per sale.
 | 15 | 10.0x | $25M | $5.00 |
 | 20 | 20.0x | $3B | $10.00 |
 | 25 (cap) | 50.0x | $400B | $25.00 |
+
+> **Note:** Base value of $0.50 assumes the recipe system from doc 002 is implemented. The current code uses $1.00 (`chickenPriceInCents: 100`). Update the code to $0.50 when implementing the recipe system.
 
 **Formula:** Sale value multipliers are hand-tuned per level (see table above). No single closed-form formula applies. For implementation, store the multiplier values in a lookup table or use a piecewise function.
 

@@ -91,12 +91,12 @@ Stars are spent on permanent bonuses that persist across all future prestiges.
 | Manager Expertise I | 100 Stars | Managers start at Level 2 |
 | Kitchen Memory II | 100 Stars | All speed upgrades cost 30% less |
 | Equipment Retention I | 125 Stars | Keep 25% of equipment levels through prestige |
-
-> **Equipment retention rounding:** "Keep 25% of equipment levels" means each individual equipment item's level is multiplied by the retention percentage and **rounded down** (floor). An item at Level 1 floors to Level 0 (fully reset). An item at Level 4 keeps Level 1. An item at Level 10 keeps Level 2 (at 25%) or Level 5 (at 50%). This is a **Phase 4 feature** (prestige system).
 | Quick Start III | 150 Stars | Start each run with $5,000 |
 | Bulk Mastery | 150 Stars | Unlock max bulk buy from the start |
 | Offline Earner II | 175 Stars | Offline duration cap +4 hours |
 | Loyal Customers II | 200 Stars | x3 customer arrival rate |
+
+> **Equipment retention rounding:** "Keep 25% of equipment levels" means each individual equipment item's level is multiplied by the retention percentage and **rounded down** (floor). An item at Level 1 floors to Level 0 (fully reset). An item at Level 4 keeps Level 1. An item at Level 10 keeps Level 2 (at 25%) or Level 5 (at 50%). This is a **Phase 4 feature** (prestige system).
 
 #### Tier 3: Mastery (200-750 Stars)
 
@@ -109,6 +109,8 @@ Stars are spent on permanent bonuses that persist across all future prestiges.
 | Star Power I | 500 Stars | Each unspent Star gives +0.5% revenue |
 | Quick Start IV | 500 Stars | Start each run with $50,000 |
 | Permanent Slot I | 600 Stars | Keep ONE upgrade through prestige (player's choice) |
+| Staff Retention I | 700 Stars | Staff start at 50% of pre-prestige levels |
+| Offline Earner III | 750 Stars | Offline efficiency +20% |
 
 > **Permanent slot mechanics:** When the player purchases "Permanent Slot I," they choose ONE upgrade to carry through prestige. Rules:
 > - The selection is made via a UI prompt after purchasing the Star upgrade
@@ -117,8 +119,6 @@ Stars are spent on permanent bonuses that persist across all future prestiges.
 > - Only base upgrades qualify (speed, capacity, value categories) — not equipment, staff, or managers
 > - "Permanent Slot II" adds a second independent selection
 > - This is a **Phase 4 feature** (prestige system)
-| Staff Retention I | 700 Stars | Staff start at 50% of pre-prestige levels |
-| Offline Earner III | 750 Stars | Offline efficiency +20% |
 
 #### Tier 4: Legendary (750-2000 Stars)
 
