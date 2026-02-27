@@ -28,8 +28,10 @@ Phase 3 adds lateral progression through equipment and staff. These provide pass
 
 3. **Staff system** (6 staff members) — passive bonuses per level
    - Line Cook (+15% cook speed/lvl), Sous Chef (+10% recipe value/lvl)
-   - Cashier (+15% sell speed/lvl), Marketing Intern (+10% customer rate/lvl)
+   - Cashier (+15% sell speed/lvl), Marketing Intern (+10% sell speed/lvl — see note)
    - Accountant (-5% upgrade costs/lvl, max -30%), Health Inspector (+5% all revenue/lvl)
+
+> **Customer attraction/rate bonuses:** Doc 003 defines Marketing Intern as "+10% customer rate" and Display Case/Neon Sign as "+% customer attraction." The customer demand system is not implemented in any plan (deferred indefinitely per Plan 009). **Reinterpret these bonuses as sell speed bonuses** (faster selling ≈ serving more customers): Marketing Intern → +10% sell speed/lvl, Display Case → +15% sell speed, Neon Sign → +25% sell speed + 10% tips.
    - Cost scaling: ×2.5 to ×3 per level, max level 6-10
 
 4. **Equipment unlock progression** — tied to revenue milestones (doc 003 Feature Unlock Order #10+)
@@ -55,7 +57,7 @@ Phase 3 adds lateral progression through equipment and staff. These provide pass
 ### Step 2: Equipment system
 
 - [ ] Create `src/engine/equipment.ts` with equipment definitions, buy/upgrade functions
-- [ ] Recipe-type tagging: each recipe gets a `types: string[]` field (fried, grilled, wings, etc.)
+- [ ] Recipe-type tagging: recipes already have a `types: string[]` field (added in Plan 008). Verify tags are correct and add any missing types for new recipes.
 - [ ] Equipment bonuses apply conditionally based on active recipe type
 - [ ] Integrate equipment multipliers into cook speed and sale value calculations in `tick()`
 - [ ] Write tests for equipment purchase, upgrade, type-specific bonuses
@@ -80,6 +82,10 @@ Phase 3 adds lateral progression through equipment and staff. These provide pass
 - [ ] Show recipe-type bonuses clearly
 - [ ] Equipment/staff unlock conditions displayed for locked items
 - [ ] Integrate into existing tabbed interface
+
+### Implementation Notes
+
+- **Equipment and staff data:** This plan references doc 003's equipment and staff tables by name and bonus type. The implementing agent must read doc 003 directly for full details (all costs, max levels, upgrade cost scaling per item). The tables are too large to reproduce here.
 
 ### Step 6: Run full check
 

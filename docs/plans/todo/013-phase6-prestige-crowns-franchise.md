@@ -37,13 +37,19 @@ Phase 6 extends the endgame with a second prestige layer and the franchise syste
 5. **Auto-prestige option** — auto-prestige Stars when earned would double current total
 
 6. **Auto-upgrade system** (late-game QoL) — player sets priority rules for upgrade purchasing
+   - Data model: `autoUpgradeRules: Array<{ priority: number; category: UpgradeType; enabled: boolean }>`
+   - Algorithm: Each tick (or once per second), iterate rules by priority, buy the first affordable upgrade that matches an enabled rule
+   - Player can reorder priorities and toggle categories on/off
 
 ## Steps
 
 ### Step 1: Crown state and franchise reset
 
-- [ ] Add `crowns: number`, `crownUpgrades: string[]`, `totalStarsEarned: number` to GameState
-- [ ] Implement `franchiseReset(state)` — resets Stars + base game, preserves Crowns
+- [ ] Add `crowns: number`, `crownUpgrades: string[]` to GameState
+- [ ] Add `totalCrownsEarned: number` (cumulative Crowns earned — never decremented by Crown upgrade purchases. Needed by Phase 7 Diamond formula: `floor(totalCrownsEarned / 25)`)
+- [ ] **Note:** `totalStarsEarned` was already added in Plan 011 (Phase 4). It is incremented whenever Stars are earned via prestige. This plan's Crown formula uses it: `floor(totalStarsEarned / 500)`.
+- [ ] **Save migration:** For saves from Phases 4-5 that lack `totalStarsEarned`, default to `stars + sum(starUpgradeCosts)` as a best approximation of total Stars earned (imperfect but recovers most data).
+- [ ] Implement `franchiseReset(state)` — resets Stars + base game, preserves Crowns. Increment `totalCrownsEarned` by Crowns earned.
 - [ ] Write tests for reset correctness
 
 ### Step 2: Crown upgrade tree
@@ -57,10 +63,11 @@ Phase 6 extends the endgame with a second prestige layer and the franchise syste
 
 - [ ] Add `franchiseLocations: Array<{ id, name, specialty, speedMult, valueMult, state: BaseGameState }>` to GameState
 - [ ] Add `activeLocationIndex: number`
-- [ ] `tick()` must process ALL locations each frame, not just the active one
+- [ ] **Refactor tick() for multi-location:** Create `tickLocation(locationState, deltaMs)` (extract current tick logic) and a `tickGame(state, deltaMs)` wrapper that iterates over all franchise locations, calling `tickLocation()` for each.
 - [ ] Each location's sub-state is a full base game state (managers, upgrades, etc.)
 - [ ] Combined revenue from all locations counts toward Star earning
-- [ ] Performance consideration: batch calculations per location
+- [ ] **Offline earnings across locations:** `calculateOfflineEarnings()` must sum revenue rates across all active franchise locations. Add a step to compute per-location base rates and aggregate them.
+- [ ] Performance consideration: batch calculations per location (compute revenue once per second, not per frame)
 - [ ] Write tests for multi-location ticking, specialty bonuses
 
 ### Step 4: Auto-prestige
@@ -69,7 +76,13 @@ Phase 6 extends the endgame with a second prestige layer and the franchise syste
 - [ ] When auto-prestige is enabled and condition met, trigger prestige automatically
 - [ ] Write tests
 
-### Step 5: UI updates
+### Step 5: Save/load updates
+
+- [ ] Update `save.ts` to serialize/deserialize all new fields: `crowns`, `crownUpgrades`, `totalCrownsEarned`, `franchiseLocations` (deeply nested sub-states), `activeLocationIndex`
+- [ ] **Franchise location sub-states** contain full base game states — ensure the serializer handles the array of nested objects correctly
+- [ ] Write round-trip save/load tests for franchise state
+
+### Step 6: UI updates
 
 - [ ] Location tab bar at top of game area
 - [ ] Combined $/sec summary across all locations
@@ -77,7 +90,7 @@ Phase 6 extends the endgame with a second prestige layer and the franchise syste
 - [ ] Franchise reset button with preview
 - [ ] Auto-prestige toggle
 
-### Step 6: Run full check
+### Step 7: Run full check
 
 - [ ] `npm run check` and `npm run test:e2e` — fix any failures
 

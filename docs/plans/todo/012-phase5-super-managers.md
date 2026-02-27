@@ -17,7 +17,7 @@ Phase 5 adds active-play value for post-prestige gameplay. Super Managers have p
 ## What Phase 5 Adds
 
 1. **Tier 2 Efficiency Managers**
-   - Speedy Steve ($100K, +25% all automation speed), Bulk Betty ($100K, batch size → 5), Quality Quinn ($250K, +20% sale value on automated sales)
+   - Speedy Steve ($100K, +25% all automation speed), Bulk Betty ($100K, sets base batch size to 5 — manager level batch bonuses are additive on top), Quality Quinn ($250K, +20% sale value on automated sales)
    - Unlock at $500K-$1M revenue
 
 2. **Tier 3 Specialist Managers** — one per recipe type
@@ -37,7 +37,7 @@ Phase 5 adds active-play value for post-prestige gameplay. Super Managers have p
 5. **Temporary boost system** — Happy Hour (×2 revenue, 30min), Rush Order (×3 sell speed, 15min), etc.
    - Same-type boosts don't stack (highest wins); different-type boosts stack multiplicatively
 
-6. **Golden Drumstick tracking** — earned via achievements (counter only, no shop yet)
+6. **Golden Drumstick tracking** — placeholder counter only (achievements that award GDs are implemented in Phase 7, Plan 014). Add `goldenDrumsticks: number` to GameState now so the field exists when achievements start awarding them.
 
 ## What Phase 5 Does NOT Add
 
@@ -78,13 +78,19 @@ Phase 5 adds active-play value for post-prestige gameplay. Super Managers have p
 - [ ] Integrate boost multipliers into revenue/speed formulas
 - [ ] Write tests for stacking, expiration, and effect
 
-### Step 5: UI updates
+### Step 5: Save/load updates
+
+- [ ] Update `save.ts` to serialize/deserialize: `superManagers`, `activeBoosts`, `autoRecipeMode`, `goldenDrumsticks`, and any new Tier 2/3 manager state
+- [ ] Write round-trip save/load tests for new fields
+- [ ] **Note:** Super Manager cooldowns should advance during offline time. When calculating offline earnings, subtract offline duration from all `cooldownRemainingMs` values (floor at 0).
+
+### Step 6: UI updates
 
 - [ ] Super Manager panel with ability buttons and cooldown displays
 - [ ] Auto-recipe mode selector
 - [ ] Active boost indicators
 - [ ] Tier 2/3 manager sections in manager panel
 
-### Step 6: Run full check
+### Step 7: Run full check
 
 - [ ] `npm run check` and `npm run test:e2e` — fix any failures

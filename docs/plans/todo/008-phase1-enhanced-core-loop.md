@@ -54,7 +54,15 @@ Do NOT implement these — they belong to later phases:
 ### Step 1: Define recipe data and expanded GameState
 
 - [ ] Create `src/engine/recipes.ts` with recipe definitions (all 8 recipes from doc 002 table — they're data, but only 4 unlock in Phase 1)
-  - Each recipe: `id`, `name`, `rawInput`, `cookTimeSeconds`, `saleValueCents`, `unlockCondition`
+  - Each recipe: `id`, `name`, `rawInput`, `cookTimeSeconds`, `saleValueCents`, `unlockCondition`, `types: string[]`
+  - **Recipe type tags** (used by Phase 3 equipment bonuses — define now, used later):
+    - Basic Fried Chicken: `["fried"]`
+    - Grilled Chicken: `["grilled"]`
+    - Chicken Wings: `["wings"]`
+    - Chicken Burger: `["burger"]`
+    - Chicken Katsu: `["fried"]`
+    - Rotisserie Chicken: `["roasted"]`
+    - (future recipes tagged as appropriate)
   - Basic Fried Chicken: 1 input, 10s, 50¢, available at start
   - Grilled Chicken: 1 input, 15s, 100¢, unlock at $500 total earned (50000 cents)
   - Chicken Wings: 1 input, 8s, 75¢, unlock at 250 chickens sold
@@ -67,11 +75,13 @@ Do NOT implement these — they belong to later phases:
   - Add `cookingSlotsLevel: number` (starts at 0 = 1 slot)
   - Add `sellingRegistersLevel: number` (starts at 0 = 1 register)
   - Add `activeRecipe: string` (recipe ID, default `"basic_fried"`)
+  - Add `cookingRecipeId: string` (recipe ID of what's currently cooking, default `"basic_fried"`)
+    - **Why separate from `activeRecipe`:** When the player switches recipes mid-cook, `activeRecipe` changes immediately (determines what gets queued next), but `cookingRecipeId` stays as the old recipe until `cookingCount` hits 0. `tick()` uses `cookingRecipeId` for cook time lookup. When cooking completes and `cookingCount` reaches 0, `cookingRecipeId` syncs to `activeRecipe`.
   - Add `totalChickensSold: number` (lifetime stat for milestone tracking)
   - Add `totalRevenueCents: number` (lifetime stat for milestone/unlock tracking)
   - Add `earnedMilestones: string[]` (IDs of triggered milestones)
-  - Change `chickenPriceInCents` from `100` to `50` (Basic Fried Chicken base value — see doc 002 breaking change note)
-  - Change `cookTimeSeconds` default to `10` (no change, but it now represents recipe base time)
+  - **Deprecate `chickenPriceInCents` and `cookTimeSeconds`:** These fields are superseded by recipe-based values (`RECIPES[activeRecipe].saleValueCents` and `RECIPES[cookingRecipeId].cookTimeSeconds`). Keep the fields in GameState for save compatibility but they are no longer read by `tick()`. Set `chickenPriceInCents` default to `50` (Basic Fried Chicken base value) and `cookTimeSeconds` default to `10` for old-save loading.
+  - **Deprecate `sellTimeSeconds`:** Sell time is now computed via `getEffectiveSellTime()` with a constant 10s base. Keep the field for save compat but `tick()` uses the function.
 
 - [ ] Update `createInitialState()` with all new fields and defaults
 
@@ -103,21 +113,26 @@ Do NOT implement these — they belong to later phases:
   - `baseCookTime` comes from the active recipe, not a global constant
 
 - [ ] Add `getEffectiveSellTime()`:
-  - Formula: `baseSellTime × 0.85^level` (same curve as cook speed, applied to sell timer)
-  - `baseSellTime` is always 10s (selling doesn't vary by recipe)
+  - Formula: `BASE_SELL_TIME × 0.85^level` (same curve as cook speed, applied to sell timer)
+  - `BASE_SELL_TIME` is a constant `10` (selling doesn't vary by recipe — not read from GameState)
 
 - [ ] Replace `getEffectiveChickenPrice()`:
   - New behavior: multiplier-based, not additive
   - Use hand-tuned lookup table from doc 003 Chicken Sale Value table
   - `effectivePrice = recipeBaseValue × saleValueMultiplier(level)`
-  - Multiplier table: `[1.0, 1.2, 1.4, 1.7, 2.0, 2.5, ...]` (see doc 003 for all 26 values)
+  - Full multiplier lookup table (26 values, levels 0-25 — doc 003 provides levels 0-5, 10, 15, 20, 25; intermediate values interpolated to double every 5 levels through level 20, then 2.5× for levels 20-25):
+    ```
+    [1.0, 1.2, 1.4, 1.7, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5,
+     5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 12.0, 14.0, 16.0, 18.0,
+     20.0, 25.0, 30.0, 35.0, 42.0, 50.0]
+    ```
 
 - [ ] Add `getColdStorageCapacity(level)`:
   - Lookup table from doc 003: `[10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000]`
 
 - [ ] Add `getCookingSlots(level)` and `getSellingRegisters(level)`:
   - Cooking: `[1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 30]`
-  - Selling: `[1, 2, 3, 4, 5, ...]` up to 30 at level 10 (doc 003 Selling Registers table)
+  - Selling: `[1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 30]` (mirrors cooking slots — doc 003 says "same structure")
 
 - [ ] Update `buyUpgrade()` to handle the new `UpgradeType` values and update the correct `GameState` field for each
 
@@ -138,8 +153,9 @@ Do NOT implement these — they belong to later phases:
 
 - [ ] Modify selling completion to use register-based batch processing (same pattern as cooking slots)
 
-- [ ] Use the active recipe's cook time instead of the global `cookTimeSeconds`:
-  - `cookTimeMs = getEffectiveCookTime(RECIPES[state.activeRecipe].cookTimeSeconds, state.cookSpeedLevel) × 1000`
+- [ ] Use the cooking recipe's cook time instead of the global `cookTimeSeconds`:
+  - `cookTimeMs = getEffectiveCookTime(RECIPES[state.cookingRecipeId].cookTimeSeconds, state.cookSpeedLevel) × 1000`
+  - **Important:** Use `cookingRecipeId` (not `activeRecipe`) — this is the recipe currently in the oven. When `cookingCount` reaches 0, sync `cookingRecipeId` to `activeRecipe`.
 
 - [ ] Use `getEffectiveSellTime()` for sell timer (currently uses raw `sellTimeSeconds`)
 
@@ -168,17 +184,19 @@ Do NOT implement these — they belong to later phases:
 ### Step 5: Update click.ts and sell.ts for bulk operations and recipes
 
 - [ ] Add bulk cook function `clickCookBatch(state, quantity)`:
-  - Queues `min(quantity, rawChickensAvailable)` for cooking
-  - Multi-input recipes: Chicken Burger takes 2 raw chickens per cook, so `quantity` raw = `floor(quantity / rawInput)` cook jobs queued, `cookingCount` increases by that amount
-  - Each cooking slot cooks one recipe (not one raw chicken) per cycle
+  - `quantity` = number of **cook jobs** (not raw chickens). UI batch buttons (x5, x10, x25) represent cook jobs.
+  - Raw chickens consumed = `quantity × rawInput` (e.g., x5 Chicken Burger = 10 raw chickens)
+  - Actual jobs queued = `min(quantity, floor(rawChickensAvailable / rawInput))`
+  - `cookingCount` increases by the actual jobs queued
+  - Each cooking slot completes one recipe (not one raw chicken) per cycle
 
 - [ ] Add bulk sell function `sellChickensBatch(state, quantity)`:
   - Queues `min(quantity, chickensReady)` for selling
 
 - [ ] Add recipe selection function `selectRecipe(state, recipeId)`:
   - Validates recipe is unlocked (check `totalRevenueCents` and `totalChickensSold` against unlock conditions)
-  - When switching recipes: in-progress cooking completes at old recipe's time before new starts (doc 003)
-  - Sets `state.activeRecipe` to the new recipe ID
+  - Sets `state.activeRecipe` to the new recipe ID (determines what gets queued next)
+  - Does NOT change `state.cookingRecipeId` — in-progress cooking completes at the old recipe's cook time (doc 003). `tick()` syncs `cookingRecipeId` to `activeRecipe` when `cookingCount` reaches 0.
   - Returns state unchanged if recipe is locked
 
 - [ ] Write tests for all new functions, including edge cases:
@@ -278,8 +296,8 @@ Do NOT implement these — they belong to later phases:
 
 | Stat | Formula | Source |
 |---|---|---|
-| Cook time | `recipeBase × 0.85^cookSpeedLevel` (min 0.1s) | Doc 003 Cooking Speed |
-| Sell time | `10 × 0.85^sellSpeedLevel` (min 0.1s) | Doc 003 Selling Speed |
+| Cook time | `RECIPES[cookingRecipeId].cookTimeSeconds × 0.85^cookSpeedLevel` (min 0.1s) | Doc 003 Cooking Speed |
+| Sell time | `10 × 0.85^sellSpeedLevel` (min 0.1s, 10 is a constant) | Doc 003 Selling Speed |
 | Sale value | `recipeBaseValue × multiplierLookup[chickenValueLevel] × milestoneMultiplier` | Docs 003, 006 |
 | Cook speed cost | `floor(500 × 2.3^level)` cents | Doc 003 |
 | Sell speed cost | `floor(500 × 2.3^level)` cents | Doc 003 |

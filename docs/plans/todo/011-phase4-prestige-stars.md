@@ -22,7 +22,8 @@ Phase 4 is the single most important feature for longevity. The prestige system 
 
 2. **Prestige reset logic** — what resets vs what persists (doc 005 table)
    - Resets: cash, all upgrades, equipment levels, staff levels, manager levels (to 1 or Star-boosted), milestone progress
-   - Keeps: Stars, Star upgrades, Super Managers, recipes unlocked, achievements, manager hire status, offline upgrades
+   - Keeps: Stars, Star upgrades, recipes unlocked, manager hire status, offline upgrades
+   - Also keeps (when they exist in later phases): Super Managers (Phase 5), achievements (Phase 7), Golden Drumsticks (Phase 7)
 
 3. **Star upgrade tree** — 4 tiers, ~25 upgrades (doc 005 full tables)
    - Tier 1 (1-50 Stars): Reputation I, Quick Start I-II, Kitchen Memory I, Loyal Customers I, Offline Earner I, Supplier Deal I
@@ -55,15 +56,22 @@ Phase 4 is the single most important feature for longevity. The prestige system 
 ### Step 1: Expand GameState for prestige
 
 - [ ] Add `stars: number`, `starUpgrades: string[]` (purchased upgrade IDs)
+- [ ] Add `totalStarsEarned: number` (cumulative Stars earned across all prestiges — never decremented by Star upgrade purchases. Needed by Phase 6 Crown formula: `floor(totalStarsEarned / 500)`)
 - [ ] Add `lifetimeRevenueCents: number` (never resets, tracks across all runs)
 - [ ] Add `prestigeCount: number`
 - [ ] Add `permanentSlots: string[]` (upgrade types carried through prestige)
+- [ ] Add `prePrestigeSnapshot: GameState | null` (for 30s undo window — see Step 4)
 - [ ] Update save/load with prestige data preservation
+- [ ] **Save migration:** When loading old saves missing `lifetimeRevenueCents`, default to `totalRevenueCents` (not 0), since before prestige existed they are identical
 
 ### Step 2: Star calculation and prestige reset
 
 - [ ] Create `src/engine/prestige.ts` with `calculateStarsEarned(state)`, `prestige(state)`
-- [ ] `prestige()` must correctly reset/preserve per the doc 005 table
+- [ ] `prestige()` must:
+  - Calculate Stars earned and add to `state.stars`
+  - Increment `state.totalStarsEarned` by the same amount (this is cumulative, never reduced)
+  - Save `prePrestigeSnapshot` before modifying state (for undo window)
+  - Correctly reset/preserve per the doc 005 table
 - [ ] Manager hire status persists but levels reset (or to Star-boosted level)
 - [ ] Equipment/staff retention based on purchased Star upgrades
 - [ ] Permanent slots preserve selected upgrades with their levels AND cost history
@@ -90,7 +98,12 @@ Phase 4 is the single most important feature for longevity. The prestige system 
 - [ ] Preview shows Stars that would be earned
 - [ ] Star upgrade tree UI (tiered display, show locked/unlocked/purchased)
 - [ ] Permanent slot selection UI
-- [ ] 30s undo-prestige button after prestige
+- [ ] **30s undo-prestige window:**
+  - Before `prestige()` modifies state, save the full pre-prestige state to `prePrestigeSnapshot`
+  - Show an "Undo Prestige" button for 30 seconds after prestige
+  - Undo restores `prePrestigeSnapshot` as the full game state and clears the snapshot
+  - After 30s (or on any meaningful action like buying an upgrade), clear `prePrestigeSnapshot` to `null`
+  - `prePrestigeSnapshot` is NOT saved to localStorage — if the player refreshes, the undo window is lost
 
 ### Step 5: Integration
 

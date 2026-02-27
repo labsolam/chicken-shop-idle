@@ -21,7 +21,7 @@ Phase 7 is the capstone. The third prestige layer (Diamonds), full achievement s
    - ~5-8 Layer 2 resets to reach
 
 2. **Legacy reset logic** — resets everything (Stars, Crowns, base game)
-   - Keeps: Diamonds, Diamond upgrades, Achievements, Golden Drumsticks
+   - Keeps: Diamonds, Diamond upgrades, Super Managers, Achievements, Golden Drumsticks
 
 3. **Diamond upgrade tree** (doc 005) — 10 upgrades
    - Dynasty I-III (×50, ×200, ×1000 all revenue)
@@ -48,13 +48,15 @@ Phase 7 is the capstone. The third prestige layer (Diamonds), full achievement s
 
 7. **Number formatting** (doc 006)
    - $0-$999.99, $1K-$999.99K, $1M-$999.99M, etc. up to scientific notation
+   - **Note:** Large numbers appear well before Phase 7 (Phase 4+ prestige runs can produce billions). Consider implementing the formatter earlier (Phase 1 or 4) if display overflows become an issue during those implementations.
 
 ## Steps
 
 ### Step 1: Diamond state and legacy reset
 
-- [ ] Add `diamonds: number`, `diamondUpgrades: string[]`, `totalCrownsEarned: number` to GameState
-- [ ] Implement `legacyReset(state)` — resets everything except Diamonds/achievements
+- [ ] Add `diamonds: number`, `diamondUpgrades: string[]` to GameState
+- [ ] **Note:** `totalCrownsEarned` was already added in Plan 013 (Phase 6). It is incremented whenever Crowns are earned via franchise reset. This plan's Diamond formula uses it: `floor(totalCrownsEarned / 25)`.
+- [ ] Implement `legacyReset(state)` — resets everything except Diamonds, Diamond upgrades, Super Managers, Achievements, Golden Drumsticks
 - [ ] Write tests for reset correctness across all 3 layers
 
 ### Step 2: Diamond upgrade tree
@@ -71,7 +73,17 @@ Phase 7 is the capstone. The third prestige layer (Diamonds), full achievement s
 - [ ] Add `achievements: string[]` (earned achievement IDs) to GameState
 - [ ] Add `goldenDrumsticks: number` to GameState
 - [ ] `checkAchievements(state)` — runs each tick or on significant events
-- [ ] Challenge achievements require tracking run-specific constraints (e.g., "no upgrades bought this run")
+- [ ] Challenge achievements require tracking run-specific constraints. Add a `runConstraints` object to GameState:
+    ```
+    runConstraints: {
+      upgradesBoughtThisRun: number;    // for "No Upgrades" challenge
+      recipesUsedThisRun: Set<string>;  // for "One Recipe Only" challenge
+      manualCooksThisRun: number;       // for "Pacifist Chef" (no manual cooks) challenge
+      runStartTimestamp: number;        // for "Speedrun" challenge
+    }
+    ```
+  - Reset `runConstraints` on every prestige (Star, Crown, and Legacy resets)
+  - Increment counters in the relevant engine functions (buyUpgrade, selectRecipe, clickCook)
 - [ ] Secret achievements: don't show condition until earned
 - [ ] Write tests for each achievement trigger
 

@@ -35,7 +35,8 @@ Phase 2 transitions the game from a clicker into a true idle game by adding mana
 4. **Offline earnings** — welcome-back screen with earnings summary
    - `baseRate` = rolling average of revenue over last 60 seconds
    - `offlineEarnings = baseRate × duration × offlineEfficiency`
-   - Base efficiency: 30%, duration cap: 4 hours
+   - Base efficiency: 30%, duration cap: 4 hours (doc 004 Level 0)
+   - **Breaking change:** The existing `offline.ts` has `MAX_OFFLINE_MS = 8 * 60 * 60 * 1000` (8 hours). Change this to 4 hours to match doc 004 Level 0 cap. The 8h cap becomes achievable via offline upgrades (Star purchases in Phase 4).
    - Replaces current no-op in `src/engine/offline.ts`
 
 5. **Customer Tips system** (doc 003, Category 3)
@@ -48,13 +49,17 @@ Phase 2 transitions the game from a clicker into a true idle game by adding mana
 
 ## What Phase 2 Does NOT Add
 
-- Tier 2 Efficiency Managers (Speedy Steve, Bulk Betty, Quality Quinn) — defer to Phase 2b or Phase 5
-- Tier 3 Specialist Managers — defer to Phase 5
-- Tier 4 Super Managers — Phase 5
-- Diminishing returns on long sessions — Phase 3+
-- Auto-recipe selection modes — Phase 5
-- Temporary boost system — Phase 5
-- Notification system — deferred
+> **Scope note:** Doc 006 Phase 2 lists Efficiency Managers, Specialist Managers, and Customer Demand as Phase 2 features. These have been re-scoped to later phases because Phase 2 is already large (3 basic managers + offline earnings + tips + click bonuses). This is a deliberate plan-level decision; doc 006 reflects the original vision, these plans reflect the refined scope.
+
+- Tier 2 Efficiency Managers (Speedy Steve, Bulk Betty, Quality Quinn) — moved to Phase 5 (Plan 012)
+- Tier 3 Specialist Managers — moved to Phase 5 (Plan 012)
+- Tier 4 Super Managers — Phase 5 (Plan 012)
+- Customer demand system (customer arrival rate, lost sales tracking) — deferred indefinitely per doc 002 ("optional flavor that can be deferred to Phase 3 or later"). No plan currently implements this; related bonuses (Marketing Intern, Display Case, Neon Sign) should be reinterpreted as sell-speed or revenue bonuses if customer demand is never implemented.
+- Buying Speed upgrade — deferred. Doc 003 defines it (20 levels, cap at 1s auto-buy interval) but it requires the Auto-Supplier manager and is superseded by Buyer Bob's interval upgrades. Revisit if needed.
+- Diminishing returns on long sessions — Phase 3 (Plan 010)
+- Auto-recipe selection modes — Phase 5 (Plan 012)
+- Temporary boost system — Phase 5 (Plan 012)
+- Notification system — deferred indefinitely
 
 ## Steps
 
@@ -84,8 +89,8 @@ Phase 2 transitions the game from a clicker into a true idle game by adding mana
 - [ ] Add manager timer processing to `tick()`:
   - For each hired manager, advance `elapsedMs` by `deltaMs`
   - When elapsed >= interval, perform action and reset timer
-  - Compute interval from level (base interval × speed reduction)
-  - Compute batch size from level
+  - Compute interval from level: `baseInterval / (1 + speedBonus)` (see formula correction note)
+  - Compute batch size from level (doc 004 upgrade table: +1 at L5, +2 at L6, +5 at L7, +10 at L8, +20 at L9, +50 at L10)
 - [ ] Write tests for manager automation at various levels
 
 ### Step 4: Revenue tracking and offline earnings
@@ -127,7 +132,9 @@ Phase 2 transitions the game from a clicker into a true idle game by adding mana
 
 | Stat | Formula | Source |
 |---|---|---|
-| Manager interval | `baseInterval × (1 - speedBonus)` | Doc 004 |
+| Manager interval | `baseInterval / (1 + speedBonus)` | Doc 004 (corrected — see note) |
 | Manager upgrade cost | `hireCost × 5^level` | Doc 004 |
 | Offline earnings | `baseRate × min(elapsed, 4h) × 0.30` | Doc 004 |
 | Tip check | `random() < tipChance` → `saleValue × (1 + tipBonus)` | Doc 003 |
+
+> **Manager speed formula correction:** Doc 004 says `interval = baseInterval × (1 - speedBonus)`, but this breaks at Level 4 (+100% speed → interval = 0) and goes negative at Level 5+. Use the reciprocal formula `interval = baseInterval / (1 + speedBonus)` instead. At +25% speed: `base / 1.25` (20% faster). At +100%: `base / 2` (twice as fast). At +2000%: `base / 21` (~21× faster). This is the standard idle game approach and produces sensible values at all levels.
