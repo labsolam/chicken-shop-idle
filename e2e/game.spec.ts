@@ -6,6 +6,9 @@ import { test, expect } from "@playwright/test";
  * Cooking takes 10s and selling takes 10s (timed actions via tick).
  * These run in a real browser (headless Chromium).
  *
+ * Phase 1: basic_fried chicken costs $0.25 raw and sells for $0.50.
+ * Starting money: $5.00 (500 cents).
+ *
  * Run: npm run test:e2e
  * Screenshots saved to: e2e/results/
  */
@@ -32,6 +35,30 @@ test.describe("Game initial state", () => {
     await expect(page.locator("#cook-button")).toBeVisible();
     await expect(page.locator("#sell-button")).toBeVisible();
   });
+
+  test("shows cold storage display", async ({ page }) => {
+    await page.goto("/");
+
+    await expect(page.locator("#cold-storage-display")).toContainText(
+      "Storage: 0/10",
+    );
+  });
+
+  test("shows upgrade sections", async ({ page }) => {
+    await page.goto("/");
+
+    await expect(page.locator("#buy-cook-speed")).toBeVisible();
+    await expect(page.locator("#buy-sell-speed")).toBeVisible();
+    await expect(page.locator("#buy-chicken-value")).toBeVisible();
+  });
+
+  test("shows active recipe", async ({ page }) => {
+    await page.goto("/");
+
+    await expect(page.locator("#active-recipe-name")).toHaveText(
+      "Basic Fried Chicken",
+    );
+  });
 });
 
 test.describe("Buy → Cook → Sell flow", () => {
@@ -49,6 +76,16 @@ test.describe("Buy → Cook → Sell flow", () => {
       path: "e2e/screenshots/after-buy.png",
       fullPage: true,
     });
+  });
+
+  test("cold storage display updates after buying", async ({ page }) => {
+    await page.goto("/");
+
+    await page.locator("#buy-chicken-button").click();
+
+    await expect(page.locator("#cold-storage-display")).toContainText(
+      "Storage: 1/10",
+    );
   });
 
   test("cooking queues a raw chicken and completes after timer", async ({
@@ -97,8 +134,8 @@ test.describe("Buy → Cook → Sell flow", () => {
     await expect(page.locator("#selling-status")).toContainText("Selling:");
 
     // Wait for the 10s sell timer to complete
-    // Started with $5.00, spent $0.25, earned $1.00 = $5.75
-    await expect(page.locator("#money")).toHaveText("$5.75", {
+    // Started with $5.00, spent $0.25, earned $0.50 = $5.25
+    await expect(page.locator("#money")).toHaveText("$5.25", {
       timeout: 15000,
     });
 

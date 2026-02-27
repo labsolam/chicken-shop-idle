@@ -3,6 +3,7 @@ import { GameState } from "../types/game-state";
 /**
  * AGENT CONTEXT: Pure serialization/deserialization for game state.
  * localStorage I/O is handled in main.ts, keeping these functions testable.
+ * Phase 1 new fields are handled as optional (with safe defaults) for old-save compat.
  */
 
 const STATE_FIELDS: Array<{ key: keyof GameState; type: string }> = [
@@ -25,6 +26,13 @@ const OPTIONAL_NUMBER_FIELDS: Array<keyof GameState> = [
   "sellingCount",
   "sellingElapsedMs",
   "sellTimeSeconds",
+  // Phase 1 additions
+  "sellSpeedLevel",
+  "coldStorageLevel",
+  "cookingSlotsLevel",
+  "sellingRegistersLevel",
+  "totalChickensSold",
+  "totalRevenueCents",
 ];
 
 export function serializeState(state: GameState): string {
@@ -57,6 +65,20 @@ export function deserializeState(json: string): GameState | null {
     }
   }
 
+  // Validate optional array fields
+  if (
+    obj.earnedMilestones !== undefined &&
+    !Array.isArray(obj.earnedMilestones)
+  ) {
+    return null;
+  }
+  if (
+    obj.unlockedRecipes !== undefined &&
+    !Array.isArray(obj.unlockedRecipes)
+  ) {
+    return null;
+  }
+
   return {
     money: obj.money as number,
     totalChickensCooked: obj.totalChickensCooked as number,
@@ -73,5 +95,24 @@ export function deserializeState(json: string): GameState | null {
     sellingCount: (obj.sellingCount as number) ?? 0,
     sellingElapsedMs: (obj.sellingElapsedMs as number) ?? 0,
     sellTimeSeconds: (obj.sellTimeSeconds as number) ?? 10,
+    // Phase 1 fields with safe defaults
+    sellSpeedLevel: (obj.sellSpeedLevel as number) ?? 0,
+    coldStorageLevel: (obj.coldStorageLevel as number) ?? 0,
+    cookingSlotsLevel: (obj.cookingSlotsLevel as number) ?? 0,
+    sellingRegistersLevel: (obj.sellingRegistersLevel as number) ?? 0,
+    activeRecipe:
+      typeof obj.activeRecipe === "string" ? obj.activeRecipe : "basic_fried",
+    cookingRecipeId:
+      typeof obj.cookingRecipeId === "string"
+        ? obj.cookingRecipeId
+        : "basic_fried",
+    totalChickensSold: (obj.totalChickensSold as number) ?? 0,
+    totalRevenueCents: (obj.totalRevenueCents as number) ?? 0,
+    earnedMilestones: Array.isArray(obj.earnedMilestones)
+      ? (obj.earnedMilestones as string[])
+      : [],
+    unlockedRecipes: Array.isArray(obj.unlockedRecipes)
+      ? (obj.unlockedRecipes as string[])
+      : ["basic_fried"],
   };
 }

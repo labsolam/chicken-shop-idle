@@ -1,6 +1,6 @@
 # Plan 008: Implement Phase 1 — Enhanced Core Loop
 
-**Status:** Todo
+**Status:** Complete
 **Date:** 2026-02-27
 
 ## Context
@@ -149,6 +149,7 @@ Do NOT implement these — they belong to later phases:
   - This ensures chickens that were cooked under one recipe sell at that recipe's price, even if cooking finishes and syncs to a new recipe in the same tick.
 
 - [ ] Modify cooking completion in `tick()` to use slot-based batch processing (doc 003 "Parallel Slot Architecture"):
+
   ```
   while (cookingCount > 0 && cookingElapsedMs >= cookTimeMs) {
     const completedThisCycle = Math.min(cookingCount, cookingSlots);
@@ -162,6 +163,7 @@ Do NOT implement these — they belong to later phases:
   ```
 
 - [ ] Modify selling completion to use register-based batch processing (same pattern as cooking slots):
+
   ```
   while (sellingCount > 0 && sellingElapsedMs >= sellTimeMs) {
     const completedThisCycle = Math.min(sellingCount, sellingRegisters);
@@ -336,20 +338,21 @@ Do NOT implement these — they belong to later phases:
 
 ### Key Formulas (Quick Reference)
 
-| Stat | Formula | Source |
-|---|---|---|
-| Cook time | `RECIPES[cookingRecipeId].cookTimeSeconds × 0.85^cookSpeedLevel` (min 0.1s) | Doc 003 Cooking Speed |
-| Sell time | `10 × 0.85^sellSpeedLevel` (min 0.1s, 10 is a constant) | Doc 003 Selling Speed |
-| Sale value | `recipeBaseValue × multiplierLookup[chickenValueLevel] × milestoneMultiplier` | Docs 003, 006 |
-| Cook speed cost | `floor(500 × 2.3^level)` cents | Doc 003 |
-| Sell speed cost | `floor(500 × 2.3^level)` cents | Doc 003 |
-| Value cost | `floor(1000 × 3.5^level)` cents | Doc 003 |
-| Cold storage cap | Lookup table (hand-tuned) | Doc 003 |
-| Slot/register cost | `floor(baseCost × 10^level)` cents | Doc 003 |
+| Stat               | Formula                                                                       | Source                |
+| ------------------ | ----------------------------------------------------------------------------- | --------------------- |
+| Cook time          | `RECIPES[cookingRecipeId].cookTimeSeconds × 0.85^cookSpeedLevel` (min 0.1s)   | Doc 003 Cooking Speed |
+| Sell time          | `10 × 0.85^sellSpeedLevel` (min 0.1s, 10 is a constant)                       | Doc 003 Selling Speed |
+| Sale value         | `recipeBaseValue × multiplierLookup[chickenValueLevel] × milestoneMultiplier` | Docs 003, 006         |
+| Cook speed cost    | `floor(500 × 2.3^level)` cents                                                | Doc 003               |
+| Sell speed cost    | `floor(500 × 2.3^level)` cents                                                | Doc 003               |
+| Value cost         | `floor(1000 × 3.5^level)` cents                                               | Doc 003               |
+| Cold storage cap   | Lookup table (hand-tuned)                                                     | Doc 003               |
+| Slot/register cost | `floor(baseCost × 10^level)` cents                                            | Doc 003               |
 
 ### Dependency Order
 
 Steps must be implemented in order because:
+
 - Step 1 (state shape) is needed by everything
 - Step 2 (upgrade formulas) is needed by Steps 3-8
 - Step 3 (tick changes) is needed by Step 6 (milestones integrate into tick)
@@ -359,3 +362,13 @@ Steps must be implemented in order because:
 - Step 8 (number formatting) can be done anytime after Step 1
 - Step 9 (UI) depends on all engine steps + Step 8
 - Steps 10-11 (e2e/check) are last
+
+## Outcome
+
+All 11 steps implemented. 222 unit tests passing, build clean. Architecture decisions documented in decision record 012.
+
+Key implementation notes:
+
+- Added `getRecipe(id)` helper to avoid `noUncheckedIndexedAccess` TS errors at call sites (RECIPES is `Record<string, Recipe>` for flexible string access)
+- Phase 1 recipe sale price: $0.50 base (Basic Fried) — initial sell flow nets $0.25 profit ($0.50 sell - $0.25 buy)
+- E2e flow updated to expect $5.25 after first buy+cook+sell cycle (was $5.75 at old $1.00 price)
