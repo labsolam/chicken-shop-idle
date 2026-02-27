@@ -21,7 +21,7 @@ Phase 6 extends the endgame with a second prestige layer and the franchise syste
    - ~8-12 Layer 1 prestiges to reach
 
 2. **Franchise reset logic** — resets everything a Star reset does PLUS resets Stars to zero
-   - Keeps: Crowns, Crown upgrades, Super Managers, Achievements, Golden Drumsticks
+   - Keeps: Crowns, Crown upgrades, Super Managers, Achievements, Golden Drumsticks, `unlockedRecipes` (inherited from Star reset — see Plan 011)
 
 3. **Crown upgrade tree** (doc 005) — two tiers, ~17 upgrades
    - Franchise Perks (1-25 Crowns): Brand Recognition I-II, Star Accelerator I-II, Speed Heritage I, Franchise HQ, Manager Academy, Premium Supplier, Autoprestige I
@@ -48,7 +48,7 @@ Phase 6 extends the endgame with a second prestige layer and the franchise syste
 - [ ] Add `crowns: number`, `crownUpgrades: string[]` to GameState
 - [ ] Add `totalCrownsEarned: number` (cumulative Crowns earned — never decremented by Crown upgrade purchases. Needed by Phase 7 Diamond formula: `floor(totalCrownsEarned / 25)`)
 - [ ] **Note:** `totalStarsEarned` was already added in Plan 011 (Phase 4). It is incremented whenever Stars are earned via prestige. This plan's Crown formula uses it: `floor(totalStarsEarned / 500)`.
-- [ ] **Save migration:** For saves from Phases 4-5 that lack `totalStarsEarned`, default to `stars + sum(starUpgradeCosts)` as a best approximation of total Stars earned (imperfect but recovers most data).
+- [ ] **Save migration:** For saves from Phase 3 and earlier that lack `totalStarsEarned`, default to `stars + sum(starUpgradeCosts)` as a best approximation of total Stars earned (imperfect but recovers most data). Phase 4+ saves already have this field.
 - [ ] Implement `franchiseReset(state)` — resets Stars + base game, preserves Crowns. Increment `totalCrownsEarned` by Crowns earned.
 - [ ] Write tests for reset correctness
 

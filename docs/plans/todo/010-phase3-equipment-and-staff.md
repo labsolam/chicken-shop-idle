@@ -36,7 +36,7 @@ Phase 3 adds lateral progression through equipment and staff. These provide pass
 
 4. **Equipment unlock progression** — tied to revenue milestones (doc 003 Feature Unlock Order #10+)
 
-5. **Diminishing returns on long idle sessions** (doc 004) — after 8h continuous idle, earnings drop to 80%, then 60% after 10h
+5. **Diminishing returns on long idle sessions** (doc 004, assigned here as "Phase 3+" feature — not explicitly in doc 006's Phase 3 list but this is the earliest appropriate phase) — after 8h continuous idle, earnings drop to 80%, then 60% after 10h
 
 ## What Phase 3 Does NOT Add
 

@@ -86,7 +86,7 @@ Phase 4 is the single most important feature for longevity. The prestige system 
 - [ ] Each upgrade's effect integrated into relevant game formulas:
   - Reputation: multiplier in revenue formula
   - Quick Start: initial cash in `createInitialState()` (or post-prestige state)
-  - Kitchen Memory: cost reduction in `getUpgradeCost()`
+  - Kitchen Memory I: cook speed upgrades cost 20% less. Kitchen Memory II: ALL speed upgrades (cook + sell) cost 30% less. If both owned, they stack multiplicatively on cook speed: `cost × 0.80 × 0.70 = cost × 0.56`
   - Manager Expertise: starting manager level
   - Equipment/Staff Retention: % of levels kept
   - Star Power: unspent Stars × bonus %

@@ -90,7 +90,12 @@ Phase 2 transitions the game from a clicker into a true idle game by adding mana
   - For each hired manager, advance `elapsedMs` by `deltaMs`
   - When elapsed >= interval, perform action and reset timer
   - Compute interval from level: `baseInterval / (1 + speedBonus)` (see formula correction note)
-  - Compute batch size from level (doc 004 upgrade table: +1 at L5, +2 at L6, +5 at L7, +10 at L8, +20 at L9, +50 at L10)
+  - Compute batch size from level using this lookup table (indexed by level 1-10):
+    ```
+    BATCH_BONUS = [0, 0, 0, 0, 1, 2, 5, 10, 20, 50]
+    batchSize = baseBatch + BATCH_BONUS[level - 1]
+    ```
+    where `baseBatch` = 1 (or 5 if Bulk Betty is hired, see Plan 012). Each level's bonus is the total extra at that level, NOT cumulative across levels. So a Level 10 manager has batch size = baseBatch + 50 (not baseBatch + 1 + 2 + 5 + 10 + 20 + 50).
 - [ ] Write tests for manager automation at various levels
 
 ### Step 4: Revenue tracking and offline earnings
@@ -104,6 +109,12 @@ Phase 2 transitions the game from a clicker into a true idle game by adding mana
 
 - [ ] Add `tipsLevel: number` to GameState
 - [ ] Add `"tips"` to UpgradeType
+- [ ] Tip upgrade cost lookup table (hand-tuned from doc 003, converted to cents):
+  ```
+  [500_000, 2_500_000, 12_500_000, 60_000_000, 300_000_000,
+   1_500_000_000, 7_500_000_000, 40_000_000_000, 200_000_000_000, 500_000_000_000]
+  ```
+  (10 levels, roughly ×5 scaling. Unlocks at $5K total earned.)
 - [ ] Implement per-sale tip check in sell completion within `tick()`
   - **RNG approach:** Pass an optional `rng: () => number` parameter to `tick()`, defaulting to `Math.random`. This preserves engine purity (deterministic with the same RNG). Tests pass a seeded/deterministic RNG; production uses `Math.random`.
   - Doc 006 revenue formula uses expected value `(1 + tipChance × tipBonus)`. For `tick()`, use per-sale random check as doc 003 specifies. The expected value formula is for offline earnings only.

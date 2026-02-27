@@ -21,7 +21,7 @@ Phase 7 is the capstone. The third prestige layer (Diamonds), full achievement s
    - ~5-8 Layer 2 resets to reach
 
 2. **Legacy reset logic** — resets everything (Stars, Crowns, base game)
-   - Keeps: Diamonds, Diamond upgrades, Super Managers, Achievements, Golden Drumsticks
+   - Keeps: Diamonds, Diamond upgrades, Super Managers, Achievements, Golden Drumsticks, `unlockedRecipes`
 
 3. **Diamond upgrade tree** (doc 005) — 10 upgrades
    - Dynasty I-III (×50, ×200, ×1000 all revenue)
@@ -46,9 +46,9 @@ Phase 7 is the capstone. The third prestige layer (Diamonds), full achievement s
    - Remove all upgrade level caps
    - **Scope constraint:** Do NOT introduce BigInt in this phase. Cap numeric values at `Number.MAX_SAFE_INTEGER` and display "MAX" beyond that. If BigInt is needed, split into a separate future plan — it would require refactoring all arithmetic, serialization, and display logic.
 
-7. **Number formatting** (doc 006)
-   - $0-$999.99, $1K-$999.99K, $1M-$999.99M, etc. up to scientific notation
-   - **Note:** Large numbers appear well before Phase 7 (Phase 4+ prestige runs can produce billions). Consider implementing the formatter earlier (Phase 1 or 4) if display overflows become an issue during those implementations.
+7. **Golden Drumstick shop** — GDs are earned via achievements (above) and tracked since Plan 012. Add a shop where players can spend GDs on cosmetic or convenience items. If the shop design is not finalized by implementation time, document GDs as "tracked for a future plan beyond Phase 7" and skip the shop.
+
+> **Number formatting** was moved to Plan 008 (Phase 1) since large numbers appear well before Phase 7.
 
 ## Steps
 
@@ -93,17 +93,18 @@ Phase 7 is the capstone. The third prestige layer (Diamonds), full achievement s
 - [ ] Add `completionPercentage: number` to GameState (cached, recalculated periodically)
 - [ ] Write tests
 
-### Step 5: Number formatting
+### Step 5: Golden Drumstick shop (if design is ready)
 
-- [ ] Create `src/ui/format.ts` (or expand existing formatter)
-- [ ] Format: $123.45, $1.23K, $1.23M, $1.23B, $1.23T, $1.23Qa, scientific notation
-- [ ] All monetary displays use the formatter
-- [ ] Write tests for formatting at each tier
+- [ ] Define GD shop items (cosmetic/convenience — e.g., theme unlocks, auto-collect offline earnings, cosmetic titles)
+- [ ] `buyGoldenDrumstickItem(state, itemId)` — deducts GDs
+- [ ] If shop design is not finalized, skip this step and add a note: "GDs tracked but not yet spendable"
+
+> **Number formatting** is already implemented from Plan 008.
 
 ### Step 6: Infinity Mode
 
 - [ ] When purchased: remove all level caps from upgrade functions
-- [ ] Consider BigInt or big-number library for values exceeding `Number.MAX_SAFE_INTEGER`
+- [ ] Cap numeric values at `Number.MAX_SAFE_INTEGER` and display "MAX" beyond that. Do NOT introduce BigInt (see scope constraint above).
 - [ ] Write tests
 
 ### Step 7: Victory and endgame UI

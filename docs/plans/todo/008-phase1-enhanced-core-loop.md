@@ -62,7 +62,8 @@ Do NOT implement these — they belong to later phases:
     - Chicken Burger: `["burger"]`
     - Chicken Katsu: `["fried"]`
     - Rotisserie Chicken: `["roasted"]`
-    - (future recipes tagged as appropriate)
+    - Chicken Feast Platter: `["mixed"]`
+    - Signature Dish: `["signature"]`
   - Basic Fried Chicken: 1 input, 10s, 50¢, available at start
   - Grilled Chicken: 1 input, 15s, 100¢, unlock at $500 total earned (50000 cents)
   - Chicken Wings: 1 input, 8s, 75¢, unlock at 250 chickens sold
@@ -141,6 +142,12 @@ Do NOT implement these — they belong to later phases:
 
 ### Step 3: Update tick() for slots, recipes, and sell speed
 
+- [ ] **Processing order within tick() matters.** Follow this sequence:
+  1. Compute `effectiveSalePrice` from `cookingRecipeId` BEFORE processing cooking
+  2. Process selling timer (uses the price computed in step 1)
+  3. Process cooking timer (may sync `cookingRecipeId` → `activeRecipe` when done)
+  - This ensures chickens that were cooked under one recipe sell at that recipe's price, even if cooking finishes and syncs to a new recipe in the same tick.
+
 - [ ] Modify cooking completion in `tick()` to use slot-based batch processing (doc 003 "Parallel Slot Architecture"):
   ```
   while (cookingCount > 0 && cookingElapsedMs >= cookTimeMs) {
@@ -150,6 +157,8 @@ Do NOT implement these — they belong to later phases:
     totalChickensCooked += completedThisCycle;
     cookingElapsedMs -= cookTimeMs;
   }
+  // After cooking loop: sync recipe if nothing left cooking
+  if (cookingCount === 0) cookingRecipeId = activeRecipe;
   ```
 
 - [ ] Modify selling completion to use register-based batch processing (same pattern as cooking slots):
@@ -166,7 +175,7 @@ Do NOT implement these — they belong to later phases:
 
 - [ ] Use the cooking recipe's cook time instead of the global `cookTimeSeconds`:
   - `cookTimeMs = getEffectiveCookTime(RECIPES[state.cookingRecipeId].cookTimeSeconds, state.cookSpeedLevel) × 1000`
-  - **Important:** Use `cookingRecipeId` (not `activeRecipe`) — this is the recipe currently in the oven. When `cookingCount` reaches 0, sync `cookingRecipeId` to `activeRecipe`.
+  - **Important:** Use `cookingRecipeId` (not `activeRecipe`) — this is the recipe currently in the oven.
 
 - [ ] Use `getEffectiveSellTime()` for sell timer (currently uses raw `sellTimeSeconds`)
 
@@ -256,7 +265,21 @@ Do NOT implement these — they belong to later phases:
 - [ ] Integrate unlocks with upgrade visibility (can't buy locked upgrade categories)
 - [ ] Write tests for unlock conditions
 
-### Step 8: Update UI
+### Step 8: Number formatting utility
+
+- [ ] Create `src/ui/format.ts` with `formatMoney(cents: number): string`:
+  - $0-$999.99 → `$123.45`
+  - $1K-$999.99K → `$123.45K`
+  - $1M-$999.99M → `$123.45M`
+  - $1B-$999.99B → `$123.45B`
+  - $1T+ → `$1.23T`, `$1.23Qa`, then scientific notation
+  - See doc 006 Number Formatting table
+- [ ] Use `formatMoney()` in all monetary UI displays (upgrade costs, balance, revenue, milestones)
+- [ ] Write tests for each formatting tier
+
+> **Why in Phase 1:** Milestone thresholds reach $500B+ and the value multiplier table goes up to ×50. Without formatting, the UI becomes unreadable by mid-game. Originally planned for Phase 7, moved here because every subsequent phase benefits.
+
+### Step 9: Update UI
 
 - [ ] Update `src/ui/render.ts` to display:
   - Cold storage: `Storage: X/Y` where Y = capacity
@@ -275,7 +298,7 @@ Do NOT implement these — they belong to later phases:
 
 - [ ] Update UI tests in `tests/ui/render.test.ts`
 
-### Step 9: Update e2e tests
+### Step 10: Update e2e tests
 
 - [ ] Update `e2e/game.spec.ts` for the new game flow:
   - Verify cold storage limits work
@@ -283,7 +306,7 @@ Do NOT implement these — they belong to later phases:
   - Verify new upgrades appear and function
   - Verify milestone triggers
 
-### Step 10: Run full check and fix any issues
+### Step 11: Run full check and fix any issues
 
 - [ ] Run `npm run check` (lint + format + tests + build)
 - [ ] Fix any failures
@@ -333,5 +356,6 @@ Steps must be implemented in order because:
 - Steps 4-5 (buy/cook/sell changes) can be parallel
 - Step 6 (milestones) depends on Step 3
 - Step 7 (unlocks) depends on Steps 1-2
-- Step 8 (UI) depends on all engine steps
-- Steps 9-10 (e2e/check) are last
+- Step 8 (number formatting) can be done anytime after Step 1
+- Step 9 (UI) depends on all engine steps + Step 8
+- Steps 10-11 (e2e/check) are last

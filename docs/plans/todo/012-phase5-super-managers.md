@@ -17,7 +17,7 @@ Phase 5 adds active-play value for post-prestige gameplay. Super Managers have p
 ## What Phase 5 Adds
 
 1. **Tier 2 Efficiency Managers**
-   - Speedy Steve ($100K, +25% all automation speed), Bulk Betty ($100K, sets base batch size to 5 — manager level batch bonuses are additive on top), Quality Quinn ($250K, +20% sale value on automated sales)
+   - Speedy Steve ($100K, +25% all automation speed), Bulk Betty ($100K, changes `baseBatch` from 1 to 5 in the batch formula `batchSize = baseBatch + BATCH_BONUS[level - 1]` — see Plan 009 Step 3 for the bonus table), Quality Quinn ($250K, +20% sale value on automated sales)
    - Unlock at $500K-$1M revenue
 
 2. **Tier 3 Specialist Managers** — one per recipe type
@@ -30,7 +30,7 @@ Phase 5 adds active-play value for post-prestige gameplay. Super Managers have p
    - Colonel (Supply Drop: fill cold storage free, instant, 6h CD)
    - Chef Ramsay (Kitchen Nightmare: 5× all speed + 3× value, 60s, 8h CD)
    - Julia (Signature Touch: all sales at highest recipe value, 120s, 12h CD)
-   - Unlocked via Stars (Star costs: Gordon 100★, Martha 100★, Colonel 200★, Chef Ramsay 500★, Julia 1000★), permanent across prestiges
+   - Unlocked via Stars (proposed Star costs — plan-level decision, not in strategy docs: Gordon 100★, Martha 100★, Colonel 200★, Chef Ramsay 500★, Julia 1000★), permanent across prestiges. Adjust during balancing if needed.
 
 4. **Auto-recipe selection modes** — Manual, Most Profitable, Fastest, Balanced (cycles sequentially through unlocked recipes each cook cycle — since only one recipe is active at a time, "balanced" means rotating, not parallel)
 
