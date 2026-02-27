@@ -45,7 +45,7 @@ Do NOT implement these — they belong to later phases:
 - Equipment system (Phase 3)
 - Staff system (Phase 3)
 - Prestige / Stars (Phase 4)
-- Buying Speed upgrade (requires Auto-Supplier manager — Phase 2)
+- Buying Speed upgrade — deferred indefinitely (doc 003 defines it but it's superseded by Buyer Bob's manager interval upgrades in Phase 2)
 - Golden Drumsticks shop (Phase 5+)
 - Recipes beyond Chicken Burger (Katsu at $5M, Rotisserie at $5B, etc. unlock later but can be defined in data)
 
@@ -79,7 +79,8 @@ Do NOT implement these — they belong to later phases:
     - **Why separate from `activeRecipe`:** When the player switches recipes mid-cook, `activeRecipe` changes immediately (determines what gets queued next), but `cookingRecipeId` stays as the old recipe until `cookingCount` hits 0. `tick()` uses `cookingRecipeId` for cook time lookup. When cooking completes and `cookingCount` reaches 0, `cookingRecipeId` syncs to `activeRecipe`.
   - Add `totalChickensSold: number` (lifetime stat for milestone tracking)
   - Add `totalRevenueCents: number` (lifetime stat for milestone/unlock tracking)
-  - Add `earnedMilestones: string[]` (IDs of triggered milestones)
+  - Add `earnedMilestones: string[]` (IDs of triggered milestones — use array, not Set, for JSON serializability; ensure `checkMilestones()` skips already-earned IDs)
+  - Add `unlockedRecipes: string[]` (recipe IDs permanently unlocked — persists through prestige. Decoupled from `totalRevenueCents`/`totalChickensSold` so recipes survive resets in Phase 4+)
   - **Deprecate `chickenPriceInCents` and `cookTimeSeconds`:** These fields are superseded by recipe-based values (`RECIPES[activeRecipe].saleValueCents` and `RECIPES[cookingRecipeId].cookTimeSeconds`). Keep the fields in GameState for save compatibility but they are no longer read by `tick()`. Set `chickenPriceInCents` default to `50` (Basic Fried Chicken base value) and `cookTimeSeconds` default to `10` for old-save loading.
   - **Deprecate `sellTimeSeconds`:** Sell time is now computed via `getEffectiveSellTime()` with a constant 10s base. Keep the field for save compat but `tick()` uses the function.
 
@@ -120,7 +121,7 @@ Do NOT implement these — they belong to later phases:
   - New behavior: multiplier-based, not additive
   - Use hand-tuned lookup table from doc 003 Chicken Sale Value table
   - `effectivePrice = recipeBaseValue × saleValueMultiplier(level)`
-  - Full multiplier lookup table (26 values, levels 0-25 — doc 003 provides levels 0-5, 10, 15, 20, 25; intermediate values interpolated to double every 5 levels through level 20, then 2.5× for levels 20-25):
+  - Full multiplier lookup table (26 hand-tuned values, levels 0-25 — doc 003 provides levels 0-5, 10, 15, 20, 25; intermediate values interpolated to roughly double every 5 levels through level 20, then 2.5× for levels 20-25):
     ```
     [1.0, 1.2, 1.4, 1.7, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5,
      5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 12.0, 14.0, 16.0, 18.0,
@@ -151,7 +152,17 @@ Do NOT implement these — they belong to later phases:
   }
   ```
 
-- [ ] Modify selling completion to use register-based batch processing (same pattern as cooking slots)
+- [ ] Modify selling completion to use register-based batch processing (same pattern as cooking slots):
+  ```
+  while (sellingCount > 0 && sellingElapsedMs >= sellTimeMs) {
+    const completedThisCycle = Math.min(sellingCount, sellingRegisters);
+    sellingCount -= completedThisCycle;
+    money += completedThisCycle * effectiveSalePrice;
+    totalChickensSold += completedThisCycle;
+    totalRevenueCents += completedThisCycle * effectiveSalePrice;
+    sellingElapsedMs -= sellTimeMs;
+  }
+  ```
 
 - [ ] Use the cooking recipe's cook time instead of the global `cookTimeSeconds`:
   - `cookTimeMs = getEffectiveCookTime(RECIPES[state.cookingRecipeId].cookTimeSeconds, state.cookSpeedLevel) × 1000`
@@ -164,7 +175,8 @@ Do NOT implement these — they belong to later phases:
 - [ ] Track `totalRevenueCents` — increment when money is earned from selling
 
 - [ ] Compute effective sale price using recipe value × sale value multiplier:
-  - `price = getEffectiveChickenPrice(RECIPES[state.activeRecipe].saleValueCents, state.chickenValueLevel)`
+  - `price = getEffectiveChickenPrice(RECIPES[state.cookingRecipeId].saleValueCents, state.chickenValueLevel)`
+  - **Known simplification:** `chickensReady` is a plain count — it does not track which recipe produced each ready chicken. If the player switches recipes while chickens are in `chickensReady`, those chickens sell at the new recipe's price. This matches standard idle game behavior (most games use single-active-production). Use `cookingRecipeId` (not `activeRecipe`) for the sell price so at least the currently-cooking recipe's value is used.
 
 - [ ] **Update all existing tests** in `tests/engine/tick.test.ts`, then add tests for batch cooking, batch selling, recipe-based cook times, and stat tracking
 
@@ -230,10 +242,17 @@ Do NOT implement these — they belong to later phases:
 
 - [ ] Create `src/engine/unlocks.ts` implementing the Feature Unlock Order from doc 003:
   - `isFeatureUnlocked(state, featureId)` → boolean
-  - Features: bulk buy x5 ($50 earned), cold storage ($100 earned), recipes (various), etc.
-  - Use doc 003's Feature Unlock Order table as the canonical source
+  - Features include (doc 003 Feature Unlock Order table is canonical):
+    - Bulk Buy x5: $50 total earned
+    - Cold Storage: $100 total earned
+    - 2nd Cooking Slot: $500 total earned (unlock the upgrade, not auto-grant the slot)
+    - 2nd Register: $300 total earned (unlock the upgrade)
+    - Bulk Buy x10: $5K total earned
+    - Bulk Cook x5: 2,500 chickens sold (doc 003 milestone table)
+    - Recipes: per-recipe unlock conditions (see Step 1)
+  - When an unlock fires, add the recipe to `unlockedRecipes` if it's a recipe unlock
 
-- [ ] Integrate unlocks with recipe selection (can't select locked recipes)
+- [ ] Integrate unlocks with recipe selection (check `unlockedRecipes` — this field persists through prestige in Phase 4+)
 - [ ] Integrate unlocks with upgrade visibility (can't buy locked upgrade categories)
 - [ ] Write tests for unlock conditions
 

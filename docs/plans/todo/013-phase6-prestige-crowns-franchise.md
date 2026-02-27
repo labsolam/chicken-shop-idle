@@ -34,9 +34,9 @@ Phase 6 extends the endgame with a second prestige layer and the franchise syste
    - Super Managers are global (affect all locations)
    - Summary bar shows combined $/sec
 
-5. **Auto-prestige option** — auto-prestige Stars when earned would double current total
+5. **Auto-prestige option** — auto-prestige Stars when `calculateStarsEarned(state)` >= `state.stars` (i.e., earning at least as many Stars as current balance, effectively doubling)
 
-6. **Auto-upgrade system** (late-game QoL) — player sets priority rules for upgrade purchasing
+6. **Auto-upgrade system** (late-game QoL — not in doc 006's Phase 6 list but a natural fit alongside auto-prestige; doc 004 places it "post second prestige")
    - Data model: `autoUpgradeRules: Array<{ priority: number; category: UpgradeType; enabled: boolean }>`
    - Algorithm: Each tick (or once per second), iterate rules by priority, buy the first affordable upgrade that matches an enabled rule
    - Player can reorder priorities and toggle categories on/off
@@ -62,6 +62,9 @@ Phase 6 extends the endgame with a second prestige layer and the franchise syste
 ### Step 3: Franchise location system
 
 - [ ] Add `franchiseLocations: Array<{ id, name, specialty, speedMult, valueMult, state: BaseGameState }>` to GameState
+  - **Location initialization:** When a new location is unlocked (via Crown upgrade Location Slots I-III), create it with `createInitialState()` as the base sub-state, applying Quick Start and other Star upgrades. Each location starts fresh (no equipment/staff/upgrades) unless Star retention upgrades apply.
+  - **Milestones:** Per-location (each location has its own `earnedMilestones` in its sub-state). Combined revenue across all locations counts toward the global `lifetimeRevenueCents` and `totalStarsEarned`.
+  - **Airport location:** Doc 005 says "×2 customer rate" — since customer demand is deferred, reinterpret as "×2 sell speed" consistent with Plan 010's approach.
 - [ ] Add `activeLocationIndex: number`
 - [ ] **Refactor tick() for multi-location:** Create `tickLocation(locationState, deltaMs)` (extract current tick logic) and a `tickGame(state, deltaMs)` wrapper that iterates over all franchise locations, calling `tickLocation()` for each.
 - [ ] Each location's sub-state is a full base game state (managers, upgrades, etc.)
@@ -78,7 +81,7 @@ Phase 6 extends the endgame with a second prestige layer and the franchise syste
 
 ### Step 5: Save/load updates
 
-- [ ] Update `save.ts` to serialize/deserialize all new fields: `crowns`, `crownUpgrades`, `totalCrownsEarned`, `franchiseLocations` (deeply nested sub-states), `activeLocationIndex`
+- [ ] Update `save.ts` to serialize/deserialize all new fields: `crowns`, `crownUpgrades`, `totalCrownsEarned`, `franchiseLocations` (deeply nested sub-states), `activeLocationIndex`, `autoUpgradeRules`
 - [ ] **Franchise location sub-states** contain full base game states — ensure the serializer handles the array of nested objects correctly
 - [ ] Write round-trip save/load tests for franchise state
 
@@ -90,7 +93,11 @@ Phase 6 extends the endgame with a second prestige layer and the franchise syste
 - [ ] Franchise reset button with preview
 - [ ] Auto-prestige toggle
 
-### Step 7: Run full check
+### Step 7: Update e2e tests
+
+- [ ] Add e2e tests for franchise location switching, Crown prestige, combined $/sec display
+
+### Step 8: Run full check
 
 - [ ] `npm run check` and `npm run test:e2e` — fix any failures
 

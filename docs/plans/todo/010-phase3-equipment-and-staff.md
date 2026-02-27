@@ -24,7 +24,7 @@ Phase 3 adds lateral progression through equipment and staff. These provide pass
 
 2. **Front-of-House Equipment** (6 items) — sell speed, customer attraction, tips
    - Cash Register, Display Case, Drive-Through Window, Neon Sign, Loyalty Card Printer, Catering Van
-   - Drive-Through gives +1 sell slot
+   - Drive-Through gives +1 sell register (additive bonus on top of `getSellingRegisters(level)` from Plan 008)
 
 3. **Staff system** (6 staff members) — passive bonuses per level
    - Line Cook (+15% cook speed/lvl), Sous Chef (+10% recipe value/lvl)
@@ -53,6 +53,7 @@ Phase 3 adds lateral progression through equipment and staff. These provide pass
 - [ ] Add `staff: Record<string, { hired: boolean; level: number }>` to GameState
 - [ ] Define equipment and staff data tables in new files
 - [ ] Update `createInitialState()` and save/load
+- [ ] Write save/load round-trip tests for nested `equipment` and `staff` Record structures
 
 ### Step 2: Equipment system
 
@@ -87,6 +88,10 @@ Phase 3 adds lateral progression through equipment and staff. These provide pass
 
 - **Equipment and staff data:** This plan references doc 003's equipment and staff tables by name and bonus type. The implementing agent must read doc 003 directly for full details (all costs, max levels, upgrade cost scaling per item). The tables are too large to reproduce here.
 
-### Step 6: Run full check
+### Step 6: Update e2e tests
+
+- [ ] Add e2e tests for equipment purchase/upgrade, staff hiring, recipe-type-specific bonuses
+
+### Step 7: Run full check
 
 - [ ] `npm run check` and `npm run test:e2e` — fix any failures

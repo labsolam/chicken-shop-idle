@@ -21,13 +21,15 @@ Phase 4 is the single most important feature for longevity. The prestige system 
    - Verification table in doc 005
 
 2. **Prestige reset logic** — what resets vs what persists (doc 005 table)
-   - Resets: cash, all upgrades, equipment levels, staff levels, manager levels (to 1 or Star-boosted), milestone progress
-   - Keeps: Stars, Star upgrades, recipes unlocked, manager hire status, offline upgrades
+   - Resets: cash, all base upgrade levels, equipment levels, staff levels, manager levels (to 1 or Star-boosted), milestone progress (`earnedMilestones`), `totalRevenueCents`, `totalChickensSold`
+   - **Does NOT reset:** `lifetimeRevenueCents` (cross-prestige tracking), `unlockedRecipes` (recipes stay unlocked permanently — see Plan 008), `totalStarsEarned`
+   - Keeps: Stars, Star upgrades, `unlockedRecipes`, manager hire status, offline upgrades
    - Also keeps (when they exist in later phases): Super Managers (Phase 5), achievements (Phase 7), Golden Drumsticks (Phase 7)
+   - Add `achievements: string[]` (default `[]`) to GameState now — empty until Phase 7 implements achievement triggers, but field must exist so prestige logic can preserve it
 
 3. **Star upgrade tree** — 4 tiers, ~25 upgrades (doc 005 full tables)
-   - Tier 1 (1-50 Stars): Reputation I, Quick Start I-II, Kitchen Memory I, Loyal Customers I, Offline Earner I, Supplier Deal I
-   - Tier 2 (50-200 Stars): Reputation II, Manager Expertise I, Equipment Retention I, Bulk Mastery, etc.
+   - Tier 1 (1-50 Stars): Reputation I, Quick Start I-II, Kitchen Memory I, Loyal Customers I (reinterpret as sell speed bonus — customer demand system is not implemented, see Plan 009), Offline Earner I, Supplier Deal I
+   - Tier 2 (50-200 Stars): Reputation II, Manager Expertise I, Equipment Retention I, Bulk Mastery (unlocks max bulk tier from start — overrides revenue-gated unlock conditions for bulk operations only), etc.
    - Tier 3 (200-750 Stars): Reputation III, Star Power I, Permanent Slot I, Staff Retention I, etc.
    - Tier 4 (750-2000 Stars): Reputation IV, Manager Expertise III, Equipment Retention III, Permanent Slot II, Franchise License (unlocks Phase 6)
 
@@ -60,8 +62,8 @@ Phase 4 is the single most important feature for longevity. The prestige system 
 - [ ] Add `lifetimeRevenueCents: number` (never resets, tracks across all runs)
 - [ ] Add `prestigeCount: number`
 - [ ] Add `permanentSlots: string[]` (upgrade types carried through prestige)
-- [ ] Add `prePrestigeSnapshot: GameState | null` (for 30s undo window — see Step 4)
-- [ ] Update save/load with prestige data preservation
+- [ ] Add `prePrestigeSnapshot: GameState | null` (for 30s undo window — see Step 4). **Serialization note:** `save.ts` must explicitly skip this field (set to `null` on save/load). It's a runtime-only value; circular type reference is fine since it's always `null` in persisted state.
+- [ ] Update save/load with prestige data preservation (include `stars`, `starUpgrades`, `totalStarsEarned`, `lifetimeRevenueCents`, `prestigeCount`, `permanentSlots`, `achievements`; exclude `prePrestigeSnapshot`)
 - [ ] **Save migration:** When loading old saves missing `lifetimeRevenueCents`, default to `totalRevenueCents` (not 0), since before prestige existed they are identical
 
 ### Step 2: Star calculation and prestige reset
@@ -89,7 +91,7 @@ Phase 4 is the single most important feature for longevity. The prestige system 
   - Equipment/Staff Retention: % of levels kept
   - Star Power: unspent Stars × bonus %
   - Supplier Deal: raw chicken cost reduction
-  - Offline Earner: efficiency/duration bonuses
+  - Offline Earner: efficiency/duration bonuses (3 Star upgrades map to doc 004's 10-level offline table — each Star upgrade grants multiple offline levels; specify the mapping in the upgrade data)
 - [ ] Write tests for each upgrade's effect
 
 ### Step 4: Prestige preview and UI
@@ -112,6 +114,14 @@ Phase 4 is the single most important feature for longevity. The prestige system 
 - [ ] Star Power (unspent Stars bonus) applied in revenue calculation
 - [ ] Post-prestige state correctly applies Quick Start, Manager Expertise, Equipment Retention, etc.
 
-### Step 6: Run full check
+### Step 6: Update e2e tests
+
+- [ ] Add e2e tests for:
+  - Prestige button appears at revenue threshold
+  - Prestige reset correctly preserves/resets fields
+  - Star upgrade purchase and effect
+  - Undo prestige within 30s window
+
+### Step 7: Run full check
 
 - [ ] `npm run check` and `npm run test:e2e` — fix any failures

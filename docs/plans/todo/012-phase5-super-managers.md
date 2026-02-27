@@ -30,9 +30,9 @@ Phase 5 adds active-play value for post-prestige gameplay. Super Managers have p
    - Colonel (Supply Drop: fill cold storage free, instant, 6h CD)
    - Chef Ramsay (Kitchen Nightmare: 5× all speed + 3× value, 60s, 8h CD)
    - Julia (Signature Touch: all sales at highest recipe value, 120s, 12h CD)
-   - Unlocked via Stars, permanent across prestiges
+   - Unlocked via Stars (Star costs: Gordon 100★, Martha 100★, Colonel 200★, Chef Ramsay 500★, Julia 1000★), permanent across prestiges
 
-4. **Auto-recipe selection modes** — Manual, Most Profitable, Fastest, Balanced
+4. **Auto-recipe selection modes** — Manual, Most Profitable, Fastest, Balanced (cycles sequentially through unlocked recipes each cook cycle — since only one recipe is active at a time, "balanced" means rotating, not parallel)
 
 5. **Temporary boost system** — Happy Hour (×2 revenue, 30min), Rush Order (×3 sell speed, 15min), etc.
    - Same-type boosts don't stack (highest wins); different-type boosts stack multiplicatively
@@ -49,9 +49,17 @@ Phase 5 adds active-play value for post-prestige gameplay. Super Managers have p
 
 ### Step 1: Tier 2 and Tier 3 managers
 
-- [ ] Expand manager state to support efficiency and specialist managers
-- [ ] Tier 2 effects modify existing automation calculations globally
-- [ ] Tier 3 effects are conditional on active recipe type
+- [ ] Expand manager state to support efficiency and specialist managers:
+  ```
+  efficiencyManagers: {
+    speedySteve:  { hired: boolean };
+    bulkBetty:    { hired: boolean };
+    qualityQuinn: { hired: boolean };
+  }
+  specialistManagers: Record<string, { hired: boolean }> // keyed by recipe type
+  ```
+- [ ] Tier 2 effects modify existing automation calculations globally (apply in `tick()` manager processing)
+- [ ] Tier 3 effects are conditional on `cookingRecipeId` recipe type
 - [ ] Write tests
 
 ### Step 2: Super Managers
@@ -91,6 +99,10 @@ Phase 5 adds active-play value for post-prestige gameplay. Super Managers have p
 - [ ] Active boost indicators
 - [ ] Tier 2/3 manager sections in manager panel
 
-### Step 7: Run full check
+### Step 7: Update e2e tests
+
+- [ ] Add e2e tests for Super Manager activation/cooldown, auto-recipe mode switching, boost indicators
+
+### Step 8: Run full check
 
 - [ ] `npm run check` and `npm run test:e2e` — fix any failures

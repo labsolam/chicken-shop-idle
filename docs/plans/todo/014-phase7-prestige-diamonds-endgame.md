@@ -44,7 +44,7 @@ Phase 7 is the capstone. The third prestige layer (Diamonds), full achievement s
 
 6. **Infinity Mode** — post-completion sandbox
    - Remove all upgrade level caps
-   - Numbers can grow without bound (may need BigInt for very large values)
+   - **Scope constraint:** Do NOT introduce BigInt in this phase. Cap numeric values at `Number.MAX_SAFE_INTEGER` and display "MAX" beyond that. If BigInt is needed, split into a separate future plan — it would require refactoring all arithmetic, serialization, and display logic.
 
 7. **Number formatting** (doc 006)
    - $0-$999.99, $1K-$999.99K, $1M-$999.99M, etc. up to scientific notation
@@ -70,14 +70,14 @@ Phase 7 is the capstone. The third prestige layer (Diamonds), full achievement s
 ### Step 3: Achievement system
 
 - [ ] Create `src/engine/achievements.ts` with all achievement definitions
-- [ ] Add `achievements: string[]` (earned achievement IDs) to GameState
-- [ ] Add `goldenDrumsticks: number` to GameState
+- [ ] `achievements: string[]` already exists on GameState (added as empty `[]` in Plan 011). Use the existing field.
+- [ ] `goldenDrumsticks: number` already exists on GameState (added as `0` in Plan 012). Use the existing field.
 - [ ] `checkAchievements(state)` — runs each tick or on significant events
 - [ ] Challenge achievements require tracking run-specific constraints. Add a `runConstraints` object to GameState:
     ```
     runConstraints: {
       upgradesBoughtThisRun: number;    // for "No Upgrades" challenge
-      recipesUsedThisRun: Set<string>;  // for "One Recipe Only" challenge
+      recipesUsedThisRun: string[];      // for "One Recipe Only" challenge (use array, not Set — Set is not JSON-serializable)
       manualCooksThisRun: number;       // for "Pacifist Chef" (no manual cooks) challenge
       runStartTimestamp: number;        // for "Speedrun" challenge
     }
@@ -113,12 +113,16 @@ Phase 7 is the capstone. The third prestige layer (Diamonds), full achievement s
 - [ ] Completion percentage display
 - [ ] Infinity Mode indicator
 
-### Step 8: Run full check
+### Step 8: Update e2e tests
+
+- [ ] Add e2e tests for achievement gallery, completion percentage display, Diamond prestige, Golden Chicken victory
+
+### Step 9: Run full check
 
 - [ ] `npm run check` and `npm run test:e2e` — fix any failures
 
 ## Notes
 
 - This is the final implementation phase. After Phase 7, the game has 1+ month of content.
-- BigInt consideration: at Dynasty III (×1000 all revenue) with multiple prestige layers, revenue can exceed `Number.MAX_SAFE_INTEGER` (~$90 trillion in cents). Evaluate whether BigInt is needed or if the game naturally caps below this.
+- BigInt consideration: at Dynasty III (×1000 all revenue) with multiple prestige layers, revenue can exceed `Number.MAX_SAFE_INTEGER` (~$90 trillion in cents). Infinity Mode caps at MAX_SAFE_INTEGER to avoid BigInt refactoring; a future plan could add BigInt support if needed.
 - Achievement tracking must be carefully designed to not impact `tick()` performance — most checks can run once per second rather than per frame.

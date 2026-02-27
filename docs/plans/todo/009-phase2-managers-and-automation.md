@@ -73,9 +73,9 @@ Phase 2 transitions the game from a clicker into a true idle game by adding mana
     sell:  { hired: boolean; level: number; elapsedMs: number };
   }
   ```
-- [ ] Add `lastOnlineTimestamp: number` for offline earnings
+- [ ] Add `lastOnlineTimestamp: number` for offline earnings (written on each save; `lastUpdateTimestamp` updates every tick and is used for delta calculations — they serve different purposes)
 - [ ] Add `revenueTracker: { recentRevenueCents, trackerElapsedMs, lastComputedRatePerMs }` for base rate tracking
-- [ ] Add `totalChickensBought: number` lifetime stat (for Buyer Bob tracking)
+- [ ] Add `totalChickensBought: number` lifetime stat (used for Buyer Bob analytics in UI — shows "chickens auto-purchased" count)
 - [ ] Update `createInitialState()` and save/load
 
 ### Step 2: Manager hiring and upgrading
@@ -105,7 +105,8 @@ Phase 2 transitions the game from a clicker into a true idle game by adding mana
 - [ ] Add `tipsLevel: number` to GameState
 - [ ] Add `"tips"` to UpgradeType
 - [ ] Implement per-sale tip check in sell completion within `tick()`
-- [ ] Tips are deterministic in tests (inject RNG or use seeded random)
+  - **RNG approach:** Pass an optional `rng: () => number` parameter to `tick()`, defaulting to `Math.random`. This preserves engine purity (deterministic with the same RNG). Tests pass a seeded/deterministic RNG; production uses `Math.random`.
+  - Doc 006 revenue formula uses expected value `(1 + tipChance × tipBonus)`. For `tick()`, use per-sale random check as doc 003 specifies. The expected value formula is for offline earnings only.
 - [ ] Write tests for tip chance, tip bonus, and integration
 
 ### Step 6: Click bonuses
@@ -123,7 +124,15 @@ Phase 2 transitions the game from a clicker into a true idle game by adding mana
 - [ ] Welcome-back screen showing offline earnings
 - [ ] Tips upgrade in the Value upgrade section
 
-### Step 8: Run full check
+### Step 8: Update e2e tests
+
+- [ ] Add e2e tests for:
+  - Manager hiring and automation (verify pipeline runs without clicks)
+  - Offline earnings welcome-back screen
+  - Income/second display
+  - Tip upgrade purchase
+
+### Step 9: Run full check
 
 - [ ] `npm run check` — fix any failures
 - [ ] `npm run test:e2e` — fix any failures
@@ -137,4 +146,4 @@ Phase 2 transitions the game from a clicker into a true idle game by adding mana
 | Offline earnings | `baseRate × min(elapsed, 4h) × 0.30` | Doc 004 |
 | Tip check | `random() < tipChance` → `saleValue × (1 + tipBonus)` | Doc 003 |
 
-> **Manager speed formula correction:** Doc 004 says `interval = baseInterval × (1 - speedBonus)`, but this breaks at Level 4 (+100% speed → interval = 0) and goes negative at Level 5+. Use the reciprocal formula `interval = baseInterval / (1 + speedBonus)` instead. At +25% speed: `base / 1.25` (20% faster). At +100%: `base / 2` (twice as fast). At +2000%: `base / 21` (~21× faster). This is the standard idle game approach and produces sensible values at all levels.
+> **Manager speed formula correction:** Doc 004 says `interval = baseInterval × (1 - speedBonus)`, but this breaks at Level 4 (+100% speed → interval = 0) and goes negative at Level 5+. Use the reciprocal formula `interval = baseInterval / (1 + speedBonus)` instead. At +25% speed: `base / 1.25` (20% faster). At +100%: `base / 2` (twice as fast). At +2000%: `base / 21` (~21× faster). This is the standard idle game approach and produces sensible values at all levels. **Create a decision record** (`docs/decisions/012-manager-speed-formula.md`) documenting this override when implementing.
