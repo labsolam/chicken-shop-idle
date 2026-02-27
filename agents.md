@@ -99,6 +99,13 @@ Plans live in two directories based on status:
 | 005 | `docs/plans/complete/005-migrate-to-vercel.md`      | Complete | Migrate deploy from GitHub Pages to Vercel   |
 | 006 | `docs/plans/complete/006-buy-cook-sell-clicker.md`  | Complete | 3-step clicker: Buy → Cook → Sell            |
 | 007 | `docs/plans/complete/007-cooking-selling-timers.md` | Complete | 10s cooking + 10s selling timers             |
+| 008 | `docs/plans/todo/008-phase1-enhanced-core-loop.md` | Todo | Implement Phase 1: enhanced core loop from strategy docs |
+| 009 | `docs/plans/todo/009-phase2-managers-and-automation.md` | Todo | Implement Phase 2: managers, automation, offline earnings |
+| 010 | `docs/plans/todo/010-phase3-equipment-and-staff.md` | Todo | Implement Phase 3: equipment, staff, passive bonuses |
+| 011 | `docs/plans/todo/011-phase4-prestige-stars.md` | Todo | Implement Phase 4: prestige layer 1 (Stars), upgrade tree |
+| 012 | `docs/plans/todo/012-phase5-super-managers.md` | Todo | Implement Phase 5: super managers, boosts, auto-recipe |
+| 013 | `docs/plans/todo/013-phase6-prestige-crowns-franchise.md` | Todo | Implement Phase 6: prestige layer 2 (Crowns), franchise |
+| 014 | `docs/plans/todo/014-phase7-prestige-diamonds-endgame.md` | Todo | Implement Phase 7: prestige layer 3 (Diamonds), endgame |
 
 ## Conventions
 

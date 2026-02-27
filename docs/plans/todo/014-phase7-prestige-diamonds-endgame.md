@@ -1,0 +1,129 @@
+# Plan 014: Implement Phase 7 — Prestige Layer 3 (Diamonds) & Endgame
+
+**Status:** Todo
+**Date:** 2026-02-27
+**Depends on:** Plan 013 (Phase 6 complete)
+
+## Context
+
+Phase 7 is the capstone. The third prestige layer (Diamonds), full achievement system, completion tracking, and the "Golden Chicken" final goal. Players who reach this content are deeply invested.
+
+**Read these docs before starting:**
+
+1. `agents.md` — Source map, conventions, commands
+2. `docs/strategy/005-prestige-and-endgame.md` — Diamond formula, legacy reset, Diamond upgrade tree, achievements (progression + challenge + secret), completion percentage
+3. `docs/strategy/006-comprehensive-implementation-strategy.md` — Phase 7 summary
+
+## What Phase 7 Adds
+
+1. **Diamond earning formula**: `floor(totalCrownsEarned / 25)`
+   - Requires "Crown Jewel" Crown upgrade (100 Crowns) to unlock
+   - ~5-8 Layer 2 resets to reach
+
+2. **Legacy reset logic** — resets everything (Stars, Crowns, base game)
+   - Keeps: Diamonds, Diamond upgrades, Super Managers, Achievements, Golden Drumsticks, `unlockedRecipes`
+
+3. **Diamond upgrade tree** (doc 005) — 10 upgrades
+   - Dynasty I-III (×50, ×200, ×1000 all revenue)
+   - Crown Accelerator (Crowns earned ×2), Star Accelerator Max (Stars earned ×5)
+   - Auto-Franchise (auto-franchise-reset when optimal)
+   - Instant Kitchen (all cooking starts at 1s base time)
+   - Location Mastery (all franchise locations auto-unlocked each run)
+   - **The Golden Chicken** (15 Diamonds) — "You beat the game!" trophy
+   - Infinity Mode (20 Diamonds) — remove all caps, pure number-go-up
+
+4. **Full achievement system** (doc 005)
+   - Progression achievements (First Sale, Hundred Club, Chicken Tycoon, etc.) — 10+
+   - Challenge achievements (Speedrun, No Upgrades, One Recipe Only, Pacifist Chef, etc.) — 6+
+   - Secret achievements (sell exactly 1337 chickens, etc.) — 4+
+   - Each awards Golden Drumsticks
+
+5. **Completion percentage tracker** (doc 005)
+   - Average of 8 categories: recipes, upgrades, equipment, staff, achievements, star upgrades, crown upgrades, diamond upgrades
+   - 100% = "You Beat the Game"
+
+6. **Infinity Mode** — post-completion sandbox
+   - Remove all upgrade level caps
+   - **Scope constraint:** Do NOT introduce BigInt in this phase. Cap numeric values at `Number.MAX_SAFE_INTEGER` and display "MAX" beyond that. If BigInt is needed, split into a separate future plan — it would require refactoring all arithmetic, serialization, and display logic.
+
+7. **Golden Drumstick shop** — GDs are earned via achievements (above) and tracked since Plan 012. Add a shop where players can spend GDs on cosmetic or convenience items. If the shop design is not finalized by implementation time, document GDs as "tracked for a future plan beyond Phase 7" and skip the shop.
+
+> **Number formatting** was moved to Plan 008 (Phase 1) since large numbers appear well before Phase 7.
+
+## Steps
+
+### Step 1: Diamond state and legacy reset
+
+- [ ] Add `diamonds: number`, `diamondUpgrades: string[]` to GameState
+- [ ] **Note:** `totalCrownsEarned` was already added in Plan 013 (Phase 6). It is incremented whenever Crowns are earned via franchise reset. This plan's Diamond formula uses it: `floor(totalCrownsEarned / 25)`.
+- [ ] Implement `legacyReset(state)` — resets everything except Diamonds, Diamond upgrades, Super Managers, Achievements, Golden Drumsticks
+- [ ] Write tests for reset correctness across all 3 layers
+
+### Step 2: Diamond upgrade tree
+
+- [ ] Define all Diamond upgrades as data
+- [ ] `buyDiamondUpgrade(state, id)` — deducts Diamonds
+- [ ] Integrate effects: Dynasty multipliers, accelerators, Instant Kitchen, Location Mastery, Infinity Mode
+- [ ] The Golden Chicken: set a completion flag, trigger victory screen
+- [ ] Write tests
+
+### Step 3: Achievement system
+
+- [ ] Create `src/engine/achievements.ts` with all achievement definitions
+- [ ] `achievements: string[]` already exists on GameState (added as empty `[]` in Plan 011). Use the existing field.
+- [ ] `goldenDrumsticks: number` already exists on GameState (added as `0` in Plan 012). Use the existing field.
+- [ ] `checkAchievements(state)` — runs each tick or on significant events
+- [ ] Challenge achievements require tracking run-specific constraints. Add a `runConstraints` object to GameState:
+    ```
+    runConstraints: {
+      upgradesBoughtThisRun: number;    // for "No Upgrades" challenge
+      recipesUsedThisRun: string[];      // for "One Recipe Only" challenge (use array, not Set — Set is not JSON-serializable)
+      manualCooksThisRun: number;       // for "Pacifist Chef" (no manual cooks) challenge
+      runStartTimestamp: number;        // for "Speedrun" challenge
+    }
+    ```
+  - Reset `runConstraints` on every prestige (Star, Crown, and Legacy resets)
+  - Increment counters in the relevant engine functions (buyUpgrade, selectRecipe, clickCook)
+- [ ] Secret achievements: don't show condition until earned
+- [ ] Write tests for each achievement trigger
+
+### Step 4: Completion percentage
+
+- [ ] Implement completion formula from doc 005
+- [ ] Add `completionPercentage: number` to GameState (cached, recalculated periodically)
+- [ ] Write tests
+
+### Step 5: Golden Drumstick shop (if design is ready)
+
+- [ ] Define GD shop items (cosmetic/convenience — e.g., theme unlocks, auto-collect offline earnings, cosmetic titles)
+- [ ] `buyGoldenDrumstickItem(state, itemId)` — deducts GDs
+- [ ] If shop design is not finalized, skip this step and add a note: "GDs tracked but not yet spendable"
+
+> **Number formatting** is already implemented from Plan 008.
+
+### Step 6: Infinity Mode
+
+- [ ] When purchased: remove all level caps from upgrade functions
+- [ ] Cap numeric values at `Number.MAX_SAFE_INTEGER` and display "MAX" beyond that. Do NOT introduce BigInt (see scope constraint above).
+- [ ] Write tests
+
+### Step 7: Victory and endgame UI
+
+- [ ] Golden Chicken victory screen
+- [ ] Achievement gallery (progression, challenge, secret sections)
+- [ ] Completion percentage display
+- [ ] Infinity Mode indicator
+
+### Step 8: Update e2e tests
+
+- [ ] Add e2e tests for achievement gallery, completion percentage display, Diamond prestige, Golden Chicken victory
+
+### Step 9: Run full check
+
+- [ ] `npm run check` and `npm run test:e2e` — fix any failures
+
+## Notes
+
+- This is the final implementation phase. After Phase 7, the game has 1+ month of content.
+- BigInt consideration: at Dynasty III (×1000 all revenue) with multiple prestige layers, revenue can exceed `Number.MAX_SAFE_INTEGER` (~$90 trillion in cents). Infinity Mode caps at MAX_SAFE_INTEGER to avoid BigInt refactoring; a future plan could add BigInt support if needed.
+- Achievement tracking must be carefully designed to not impact `tick()` performance — most checks can run once per second rather than per frame.
