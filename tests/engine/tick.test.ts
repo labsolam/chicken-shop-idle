@@ -406,3 +406,302 @@ describe("tick — immutability", () => {
     expect(state).toEqual(original);
   });
 });
+
+describe("tick — manager automation (Buyer Bob)", () => {
+  it("auto-buys 1 raw chicken after buyer interval (3000ms)", () => {
+    // RAW_CHICKEN_COST = 25 cents
+    const state = stateWith({
+      money: 1_000_000,
+      chickensBought: 0,
+      coldStorageLevel: 0,
+      managers: {
+        buyer: { hired: true, level: 1, elapsedMs: 0 },
+        cook: { hired: false, level: 1, elapsedMs: 0 },
+        sell: { hired: false, level: 1, elapsedMs: 0 },
+      },
+    });
+    const result = tick(state, 3000);
+    expect(result.chickensBought).toBe(1);
+    expect(result.money).toBe(1_000_000 - 25);
+  });
+
+  it("auto-buys 2 raw chickens after 2 intervals (6000ms)", () => {
+    const state = stateWith({
+      money: 1_000_000,
+      chickensBought: 0,
+      coldStorageLevel: 0,
+      managers: {
+        buyer: { hired: true, level: 1, elapsedMs: 0 },
+        cook: { hired: false, level: 1, elapsedMs: 0 },
+        sell: { hired: false, level: 1, elapsedMs: 0 },
+      },
+    });
+    const result = tick(state, 6000);
+    expect(result.chickensBought).toBe(2);
+    expect(result.money).toBe(1_000_000 - 50);
+  });
+
+  it("does not buy when cold storage is full", () => {
+    const state = stateWith({
+      money: 1_000_000,
+      chickensBought: 10, // capacity at coldStorageLevel 0
+      coldStorageLevel: 0,
+      managers: {
+        buyer: { hired: true, level: 1, elapsedMs: 0 },
+        cook: { hired: false, level: 1, elapsedMs: 0 },
+        sell: { hired: false, level: 1, elapsedMs: 0 },
+      },
+    });
+    const result = tick(state, 3000);
+    expect(result.chickensBought).toBe(10);
+  });
+
+  it("does not buy when money is insufficient", () => {
+    const state = stateWith({
+      money: 0,
+      chickensBought: 0,
+      coldStorageLevel: 0,
+      managers: {
+        buyer: { hired: true, level: 1, elapsedMs: 0 },
+        cook: { hired: false, level: 1, elapsedMs: 0 },
+        sell: { hired: false, level: 1, elapsedMs: 0 },
+      },
+    });
+    const result = tick(state, 3000);
+    expect(result.chickensBought).toBe(0);
+  });
+
+  it("accumulates elapsedMs when interval not yet reached", () => {
+    const state = stateWith({
+      money: 1_000_000,
+      chickensBought: 0,
+      coldStorageLevel: 0,
+      managers: {
+        buyer: { hired: true, level: 1, elapsedMs: 0 },
+        cook: { hired: false, level: 1, elapsedMs: 0 },
+        sell: { hired: false, level: 1, elapsedMs: 0 },
+      },
+    });
+    const result = tick(state, 2000);
+    expect(result.chickensBought).toBe(0);
+    expect(result.managers.buyer.elapsedMs).toBe(2000);
+  });
+
+  it("tracks totalChickensBought when auto-buying", () => {
+    const state = stateWith({
+      money: 1_000_000,
+      chickensBought: 0,
+      totalChickensBought: 5,
+      coldStorageLevel: 0,
+      managers: {
+        buyer: { hired: true, level: 1, elapsedMs: 0 },
+        cook: { hired: false, level: 1, elapsedMs: 0 },
+        sell: { hired: false, level: 1, elapsedMs: 0 },
+      },
+    });
+    const result = tick(state, 3000);
+    expect(result.totalChickensBought).toBe(6);
+  });
+});
+
+describe("tick — manager automation (Chef Carmen)", () => {
+  it("auto-queues 1 raw chicken for cooking after cook interval (2000ms)", () => {
+    const state = stateWith({
+      chickensBought: 3,
+      cookingCount: 0,
+      activeRecipe: "basic_fried",
+      cookingRecipeId: "basic_fried",
+      managers: {
+        buyer: { hired: false, level: 1, elapsedMs: 0 },
+        cook: { hired: true, level: 1, elapsedMs: 0 },
+        sell: { hired: false, level: 1, elapsedMs: 0 },
+      },
+    });
+    const result = tick(state, 2000);
+    expect(result.chickensBought).toBe(2);
+    expect(result.cookingCount).toBe(1);
+  });
+
+  it("does not queue when no raw chickens available", () => {
+    const state = stateWith({
+      chickensBought: 0,
+      cookingCount: 0,
+      activeRecipe: "basic_fried",
+      managers: {
+        buyer: { hired: false, level: 1, elapsedMs: 0 },
+        cook: { hired: true, level: 1, elapsedMs: 0 },
+        sell: { hired: false, level: 1, elapsedMs: 0 },
+      },
+    });
+    const result = tick(state, 2000);
+    expect(result.cookingCount).toBe(0);
+  });
+
+  it("syncs cookingRecipeId to activeRecipe when queuing to an empty cooking queue", () => {
+    const state = stateWith({
+      chickensBought: 1,
+      cookingCount: 0,
+      activeRecipe: "grilled",
+      cookingRecipeId: "basic_fried",
+      managers: {
+        buyer: { hired: false, level: 1, elapsedMs: 0 },
+        cook: { hired: true, level: 1, elapsedMs: 0 },
+        sell: { hired: false, level: 1, elapsedMs: 0 },
+      },
+    });
+    const result = tick(state, 2000);
+    expect(result.cookingRecipeId).toBe("grilled");
+  });
+});
+
+describe("tick — manager automation (Seller Sam)", () => {
+  it("auto-queues 1 cooked chicken for selling after sell interval (2000ms)", () => {
+    const state = stateWith({
+      chickensReady: 3,
+      sellingCount: 0,
+      managers: {
+        buyer: { hired: false, level: 1, elapsedMs: 0 },
+        cook: { hired: false, level: 1, elapsedMs: 0 },
+        sell: { hired: true, level: 1, elapsedMs: 0 },
+      },
+    });
+    const result = tick(state, 2000);
+    expect(result.chickensReady).toBe(2);
+    expect(result.sellingCount).toBe(1);
+  });
+
+  it("does not queue when no cooked chickens available", () => {
+    const state = stateWith({
+      chickensReady: 0,
+      sellingCount: 0,
+      managers: {
+        buyer: { hired: false, level: 1, elapsedMs: 0 },
+        cook: { hired: false, level: 1, elapsedMs: 0 },
+        sell: { hired: true, level: 1, elapsedMs: 0 },
+      },
+    });
+    const result = tick(state, 2000);
+    expect(result.sellingCount).toBe(0);
+  });
+
+  it("auto-queues across multiple intervals", () => {
+    const state = stateWith({
+      chickensReady: 5,
+      sellingCount: 0,
+      managers: {
+        buyer: { hired: false, level: 1, elapsedMs: 0 },
+        cook: { hired: false, level: 1, elapsedMs: 0 },
+        sell: { hired: true, level: 1, elapsedMs: 0 },
+      },
+    });
+    const result = tick(state, 6000); // 3 intervals of 2000ms
+    expect(result.chickensReady).toBe(2);
+    expect(result.sellingCount).toBe(3);
+  });
+});
+
+describe("tick — customer tips", () => {
+  it("applies tip when tipsLevel > 0 and rng < tipChance", () => {
+    // tipsLevel=3: tipChance=0.15, tipBonus=0.5 → tip = round(50 * 0.5) = 25
+    // total for 1 chicken: 50 + 25 = 75
+    const state = stateWith({
+      sellingCount: 1,
+      sellSpeedLevel: 0,
+      money: 0,
+      tipsLevel: 3,
+      cookingRecipeId: "basic_fried",
+      chickenValueLevel: 0,
+    });
+    const alwaysTip = (): number => 0.0; // always < tipChance
+    const result = tick(state, 10000, alwaysTip);
+    expect(result.money).toBe(75);
+  });
+
+  it("does not apply tip when rng >= tipChance (deterministic miss)", () => {
+    // tipsLevel=1: tipChance=0.05
+    const state = stateWith({
+      sellingCount: 1,
+      sellSpeedLevel: 0,
+      money: 0,
+      tipsLevel: 1,
+      cookingRecipeId: "basic_fried",
+      chickenValueLevel: 0,
+    });
+    const neverTip = (): number => 0.9; // always >= tipChance
+    const result = tick(state, 10000, neverTip);
+    expect(result.money).toBe(50); // base price only
+  });
+
+  it("does not apply tip when tipsLevel is 0 (even with rng=0)", () => {
+    const state = stateWith({
+      sellingCount: 1,
+      sellSpeedLevel: 0,
+      money: 0,
+      tipsLevel: 0,
+      cookingRecipeId: "basic_fried",
+    });
+    const alwaysTip = (): number => 0.0;
+    const result = tick(state, 10000, alwaysTip);
+    expect(result.money).toBe(50); // no tips at level 0
+  });
+
+  it("applies tip to each chicken sold in a batch", () => {
+    // tipsLevel=3: tipBonus=0.5 → tip per chicken = round(50 * 0.5) = 25
+    // 2 chickens, both tipped: 2 * (50 + 25) = 150
+    const state = stateWith({
+      sellingCount: 2,
+      sellSpeedLevel: 0,
+      sellingRegistersLevel: 2, // 3 registers — both sell in one cycle
+      money: 0,
+      tipsLevel: 3,
+      cookingRecipeId: "basic_fried",
+      chickenValueLevel: 0,
+    });
+    const alwaysTip = (): number => 0.0;
+    const result = tick(state, 10000, alwaysTip);
+    expect(result.money).toBe(150);
+  });
+});
+
+describe("tick — revenue tracker", () => {
+  it("accumulates revenue and elapsed time within the 60s window", () => {
+    const state = stateWith({
+      sellingCount: 1,
+      sellSpeedLevel: 0,
+      money: 0,
+      cookingRecipeId: "basic_fried",
+      revenueTracker: {
+        recentRevenueCents: 0,
+        trackerElapsedMs: 0,
+        lastComputedRatePerMs: 0,
+      },
+    });
+    const result = tick(state, 10000); // sells 1 chicken for 50 cents
+    expect(result.revenueTracker.recentRevenueCents).toBe(50);
+    expect(result.revenueTracker.trackerElapsedMs).toBe(10000);
+    expect(result.revenueTracker.lastComputedRatePerMs).toBe(0);
+  });
+
+  it("resets window and computes lastComputedRatePerMs after 60s elapsed", () => {
+    // Tracker has 55s accumulated with 5000 cents; 10s tick earns 50 more → total 65s window
+    const state = stateWith({
+      sellingCount: 1,
+      sellSpeedLevel: 0,
+      money: 0,
+      cookingRecipeId: "basic_fried",
+      revenueTracker: {
+        recentRevenueCents: 5000,
+        trackerElapsedMs: 55_000,
+        lastComputedRatePerMs: 0,
+      },
+    });
+    const result = tick(state, 10000);
+    // newTrackerElapsed = 65_000 >= 60_000 → reset
+    // rate = (5000 + 50) / 65_000
+    expect(result.revenueTracker.recentRevenueCents).toBe(0);
+    expect(result.revenueTracker.trackerElapsedMs).toBe(0);
+    expect(result.revenueTracker.lastComputedRatePerMs).toBeCloseTo(
+      5050 / 65000,
+    );
+  });
+});

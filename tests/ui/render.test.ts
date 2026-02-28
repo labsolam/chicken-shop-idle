@@ -65,6 +65,35 @@ function setupDOM(): void {
     <span id="selling-registers-cost"></span>
     <button id="buy-selling-registers"></button>
     <div id="milestone-progress"></div>
+    <span id="income-per-second"></span>
+    <div id="manager-section-cook"></div>
+    <div id="manager-hire-cook"></div>
+    <span id="manager-hire-cost-cook"></span>
+    <button id="manager-hire-btn-cook"></button>
+    <div id="manager-upgrade-cook"></div>
+    <span id="manager-level-cook"></span>
+    <span id="manager-upgrade-cost-cook"></span>
+    <button id="manager-upgrade-btn-cook"></button>
+    <div id="manager-section-sell"></div>
+    <div id="manager-hire-sell"></div>
+    <span id="manager-hire-cost-sell"></span>
+    <button id="manager-hire-btn-sell"></button>
+    <div id="manager-upgrade-sell"></div>
+    <span id="manager-level-sell"></span>
+    <span id="manager-upgrade-cost-sell"></span>
+    <button id="manager-upgrade-btn-sell"></button>
+    <div id="manager-section-buyer"></div>
+    <div id="manager-hire-buyer"></div>
+    <span id="manager-hire-cost-buyer"></span>
+    <button id="manager-hire-btn-buyer"></button>
+    <div id="manager-upgrade-buyer"></div>
+    <span id="manager-level-buyer"></span>
+    <span id="manager-upgrade-cost-buyer"></span>
+    <button id="manager-upgrade-btn-buyer"></button>
+    <div id="upgrade-tips" style="display: none;"></div>
+    <span id="tips-level"></span>
+    <span id="tips-cost"></span>
+    <button id="buy-tips"></button>
   `;
 }
 
@@ -327,6 +356,170 @@ describe("render", () => {
     const text = getText("milestone-progress");
     expect(text).toBe("All milestones earned!");
   });
+
+  it("displays income per second when revenue tracker has a completed rate", () => {
+    // 1 cent/ms = 1000 cents/sec = $10.00/s
+    render(
+      stateWith({
+        revenueTracker: {
+          recentRevenueCents: 0,
+          trackerElapsedMs: 0,
+          lastComputedRatePerMs: 1,
+        },
+      }),
+    );
+    expect(getText("income-per-second")).toBe("$10.00/s");
+  });
+
+  it("displays empty income-per-second when rate is zero", () => {
+    render(stateWith({}));
+    expect(getText("income-per-second")).toBe("");
+  });
+
+  it("displays income from partial window when lastComputedRatePerMs is 0", () => {
+    // 600 cents in 60000ms → rate = 0.01 cents/ms = 10 cents/sec = $0.10/s
+    render(
+      stateWith({
+        revenueTracker: {
+          recentRevenueCents: 600,
+          trackerElapsedMs: 60_000,
+          lastComputedRatePerMs: 0,
+        },
+      }),
+    );
+    expect(getText("income-per-second")).toBe("$0.10/s");
+  });
+
+  it("hides manager section when not unlocked", () => {
+    render(stateWith({ totalRevenueCents: 0 }));
+    const section = document.getElementById(
+      "manager-section-cook",
+    ) as HTMLElement;
+    expect(section.style.display).toBe("none");
+  });
+
+  it("shows manager section when unlocked", () => {
+    render(stateWith({ totalRevenueCents: 2_500_000 }));
+    const section = document.getElementById(
+      "manager-section-cook",
+    ) as HTMLElement;
+    expect(section.style.display).not.toBe("none");
+  });
+
+  it("shows hire UI when manager is unlocked but not hired", () => {
+    render(
+      stateWith({
+        totalRevenueCents: 2_500_000,
+        managers: {
+          buyer: { hired: false, level: 1, elapsedMs: 0 },
+          cook: { hired: false, level: 1, elapsedMs: 0 },
+          sell: { hired: false, level: 1, elapsedMs: 0 },
+        },
+      }),
+    );
+    const hireDiv = document.getElementById("manager-hire-cook") as HTMLElement;
+    const upgradeDiv = document.getElementById(
+      "manager-upgrade-cook",
+    ) as HTMLElement;
+    expect(hireDiv.style.display).not.toBe("none");
+    expect(upgradeDiv.style.display).toBe("none");
+  });
+
+  it("shows upgrade UI when manager is hired", () => {
+    render(
+      stateWith({
+        totalRevenueCents: 2_500_000,
+        managers: {
+          buyer: { hired: false, level: 1, elapsedMs: 0 },
+          cook: { hired: true, level: 1, elapsedMs: 0 },
+          sell: { hired: false, level: 1, elapsedMs: 0 },
+        },
+      }),
+    );
+    const hireDiv = document.getElementById("manager-hire-cook") as HTMLElement;
+    const upgradeDiv = document.getElementById(
+      "manager-upgrade-cook",
+    ) as HTMLElement;
+    expect(hireDiv.style.display).toBe("none");
+    expect(upgradeDiv.style.display).not.toBe("none");
+    expect(getText("manager-level-cook")).toBe("Lv 1");
+  });
+
+  it("disables hire button when cannot afford manager", () => {
+    render(
+      stateWith({
+        totalRevenueCents: 2_500_000,
+        money: 0,
+        managers: {
+          buyer: { hired: false, level: 1, elapsedMs: 0 },
+          cook: { hired: false, level: 1, elapsedMs: 0 },
+          sell: { hired: false, level: 1, elapsedMs: 0 },
+        },
+      }),
+    );
+    const btn = document.getElementById(
+      "manager-hire-btn-cook",
+    ) as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+  });
+
+  it("shows MAX on upgrade cost when manager is at max level", () => {
+    render(
+      stateWith({
+        totalRevenueCents: 2_500_000,
+        managers: {
+          buyer: { hired: false, level: 1, elapsedMs: 0 },
+          cook: { hired: true, level: 10, elapsedMs: 0 },
+          sell: { hired: false, level: 1, elapsedMs: 0 },
+        },
+      }),
+    );
+    expect(getText("manager-upgrade-cost-cook")).toBe("MAX");
+    const btn = document.getElementById(
+      "manager-upgrade-btn-cook",
+    ) as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+  });
+
+  it("shows Auto label on cook button when Chef Carmen is hired", () => {
+    render(
+      stateWith({
+        managers: {
+          buyer: { hired: false, level: 1, elapsedMs: 0 },
+          cook: { hired: true, level: 1, elapsedMs: 0 },
+          sell: { hired: false, level: 1, elapsedMs: 0 },
+        },
+      }),
+    );
+    const btn = document.getElementById("cook-button");
+    expect(btn?.textContent).toContain("[Auto]");
+  });
+
+  it("shows Auto label on sell button when Seller Sam is hired", () => {
+    render(
+      stateWith({
+        managers: {
+          buyer: { hired: false, level: 1, elapsedMs: 0 },
+          cook: { hired: false, level: 1, elapsedMs: 0 },
+          sell: { hired: true, level: 1, elapsedMs: 0 },
+        },
+      }),
+    );
+    const btn = document.getElementById("sell-button");
+    expect(btn?.textContent).toContain("[Auto]");
+  });
+
+  it("shows tips upgrade section when unlocked ($5K revenue)", () => {
+    render(stateWith({ totalRevenueCents: 500_000 }));
+    const div = document.getElementById("upgrade-tips") as HTMLElement;
+    expect(div.style.display).not.toBe("none");
+  });
+
+  it("renders tips upgrade level and cost", () => {
+    render(stateWith({ totalRevenueCents: 500_000, tipsLevel: 0 }));
+    expect(getText("tips-level")).toBe("Lv 0");
+    expect(getText("tips-cost")).toBe("$5.00K");
+  });
 });
 
 describe("showOfflineBanner", () => {
@@ -404,5 +597,20 @@ describe("showOfflineBanner", () => {
       moneyEarned: 1200,
     };
     expect(() => showOfflineBanner(offline)).not.toThrow();
+  });
+
+  it("shows only money earned when no chickens were produced (chickensProduced=0)", () => {
+    const offline: OfflineResult = {
+      state: stateWith({}),
+      elapsedMs: 60000,
+      chickensProduced: 0,
+      moneyEarned: 1200,
+    };
+    showOfflineBanner(offline);
+
+    const banner = document.getElementById("offline-banner") as HTMLElement;
+    expect(banner.style.display).toBe("block");
+    expect(banner.textContent).toContain("$12.00");
+    expect(banner.textContent).not.toContain("chicken");
   });
 });

@@ -14,13 +14,20 @@ import { getRecipe, RECIPE_IDS } from "../engine/recipes";
 import { isFeatureUnlocked } from "../engine/unlocks";
 import { MILESTONES } from "../engine/milestones";
 import { formatMoney } from "./format";
+import {
+  MANAGER_HIRE_COSTS,
+  MANAGER_MAX_LEVEL,
+  getManagerUpgradeCost,
+  isManagerUnlocked,
+  type ManagerKey,
+} from "../engine/managers";
 
 /**
- * AGENT CONTEXT: DOM renderer for Phase 1.
+ * AGENT CONTEXT: DOM renderer for Phase 1 + Phase 2.
  * Reads game state and updates text content of known elements.
  * No framework — just getElementById and textContent.
  * Element IDs are defined in index.html.
- * New Phase 1 elements: storage display, recipe selector, all 6 upgrades, bulk buttons, milestones.
+ * Phase 2 additions: manager panel, income/sec display, auto indicators, tips upgrade.
  */
 
 const UPGRADE_CAPS: Record<UpgradeType, number> = {
@@ -30,6 +37,7 @@ const UPGRADE_CAPS: Record<UpgradeType, number> = {
   coldStorage: 10,
   cookingSlots: 10,
   sellingRegisters: 10,
+  tips: 10,
 };
 
 function formatDuration(ms: number): string {
@@ -90,6 +98,45 @@ function renderUpgrade(
   }
 }
 
+function renderManager(state: GameState, key: ManagerKey): void {
+  const manager = state.managers[key];
+  const unlocked = isManagerUnlocked(state, key);
+  const sectionId = `manager-section-${key}`;
+
+  showElement(sectionId, unlocked);
+  if (!unlocked) return;
+
+  const hireCost = MANAGER_HIRE_COSTS[key];
+
+  if (!manager.hired) {
+    showElement(`manager-hire-${key}`, true);
+    showElement(`manager-upgrade-${key}`, false);
+    setText(`manager-hire-cost-${key}`, formatMoney(hireCost));
+    const hireBtn = document.getElementById(
+      `manager-hire-btn-${key}`,
+    ) as HTMLButtonElement | null;
+    if (hireBtn) hireBtn.disabled = state.money < hireCost;
+  } else {
+    showElement(`manager-hire-${key}`, false);
+    showElement(`manager-upgrade-${key}`, true);
+    setText(`manager-level-${key}`, `Lv ${manager.level}`);
+    if (manager.level >= MANAGER_MAX_LEVEL) {
+      setText(`manager-upgrade-cost-${key}`, "MAX");
+      const upgradeBtn = document.getElementById(
+        `manager-upgrade-btn-${key}`,
+      ) as HTMLButtonElement | null;
+      if (upgradeBtn) upgradeBtn.disabled = true;
+    } else {
+      const upgradeCost = getManagerUpgradeCost(key, manager.level);
+      setText(`manager-upgrade-cost-${key}`, formatMoney(upgradeCost));
+      const upgradeBtn = document.getElementById(
+        `manager-upgrade-btn-${key}`,
+      ) as HTMLButtonElement | null;
+      if (upgradeBtn) upgradeBtn.disabled = state.money < upgradeCost;
+    }
+  }
+}
+
 export function render(state: GameState): void {
   // --- Core stats ---
   const cookingRecipe = getRecipe(state.cookingRecipeId);
@@ -113,6 +160,22 @@ export function render(state: GameState): void {
   const registers = getSellingRegisters(state.sellingRegistersLevel);
   setText("cooking-slots-display", `Slots: ${slots}`);
   setText("selling-registers-display", `Registers: ${registers}`);
+
+  // Income per second display
+  const tracker = state.revenueTracker;
+  let ratePerMs = tracker.lastComputedRatePerMs;
+  if (ratePerMs === 0 && tracker.trackerElapsedMs > 0) {
+    ratePerMs = tracker.recentRevenueCents / tracker.trackerElapsedMs;
+  }
+  const incomePerSecond = ratePerMs * 1000;
+  if (incomePerSecond > 0) {
+    setText(
+      "income-per-second",
+      `${formatMoney(Math.round(incomePerSecond))}/s`,
+    );
+  } else {
+    setText("income-per-second", "");
+  }
 
   // --- Cooking timer status ---
   const cookingStatusEl = document.getElementById("cooking-status");
@@ -147,6 +210,22 @@ export function render(state: GameState): void {
   );
   setDisabled("cook-button", state.chickensBought < cookingRecipe.rawInput);
   setDisabled("sell-button", state.chickensReady <= 0);
+
+  // "Auto" label on action buttons when corresponding manager is active
+  const buyBtnEl = document.getElementById("buy-chicken-button");
+  if (buyBtnEl) {
+    buyBtnEl.textContent = state.managers.buyer.hired
+      ? "Buy Chicken ($0.25) [Auto]"
+      : "Buy Chicken ($0.25)";
+  }
+  const cookBtnEl = document.getElementById("cook-button");
+  if (cookBtnEl) {
+    cookBtnEl.textContent = state.managers.cook.hired ? "Cook [Auto]" : "Cook";
+  }
+  const sellBtnEl = document.getElementById("sell-button");
+  if (sellBtnEl) {
+    sellBtnEl.textContent = state.managers.sell.hired ? "Sell [Auto]" : "Sell";
+  }
 
   // --- Bulk buy buttons ---
   const canBuy = state.money >= RAW_CHICKEN_COST;
@@ -245,6 +324,18 @@ export function render(state: GameState): void {
     );
   }
 
+  // --- Tips upgrade (Phase 2 — show when unlocked) ---
+  if (isFeatureUnlocked(state, "tips_upgrade")) {
+    showElement("upgrade-tips", true);
+    renderUpgrade(state, "tips", "tips-level", "tips-cost", "buy-tips");
+  }
+
+  // --- Manager panel (Phase 2) ---
+  const managerKeys: ManagerKey[] = ["cook", "sell", "buyer"];
+  for (const key of managerKeys) {
+    renderManager(state, key);
+  }
+
   // --- Milestone progress ---
   const milestoneProgressEl = document.getElementById("milestone-progress");
   if (milestoneProgressEl) {
@@ -280,7 +371,11 @@ export function showOfflineBanner(offline: OfflineResult): void {
   const money = formatMoney(offline.moneyEarned);
   const chickens = offline.chickensProduced;
 
-  bannerEl.textContent = `Welcome back! You were away for ${duration}. Your shop sold ${chickens} chicken${chickens !== 1 ? "s" : ""} and earned ${money}.`;
+  if (chickens > 0) {
+    bannerEl.textContent = `Welcome back! You were away for ${duration}. Your shop sold ${chickens} chicken${chickens !== 1 ? "s" : ""} and earned ${money}.`;
+  } else {
+    bannerEl.textContent = `Welcome back! You were away for ${duration}. Your shop earned ${money}.`;
+  }
   bannerEl.style.display = "block";
 
   setTimeout(() => {

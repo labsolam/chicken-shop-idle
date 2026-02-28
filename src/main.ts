@@ -5,8 +5,15 @@ import { buyChicken, buyChickens } from "./engine/buy-chicken";
 import { clickCook, clickCookBatch, selectRecipe } from "./engine/click";
 import { tick } from "./engine/tick";
 import { serializeState, deserializeState } from "./engine/save";
-import { render } from "./ui/render";
+import { calculateOfflineEarnings } from "./engine/offline";
+import { render, showOfflineBanner } from "./ui/render";
 import { RECIPE_IDS } from "./engine/recipes";
+import {
+  hireManager,
+  upgradeManager,
+  applyClickBonus,
+  type ManagerKey,
+} from "./engine/managers";
 
 /**
  * AGENT CONTEXT: Application entry point.
@@ -15,6 +22,7 @@ import { RECIPE_IDS } from "./engine/recipes";
  * Loads saved game from localStorage (or creates fresh state).
  * Auto-saves every 30s + on page unload.
  * Phase 1: wires up bulk operations, recipe selection, all 6 upgrades.
+ * Phase 2: wires up managers, click bonuses, tips upgrade, offline earnings.
  */
 
 const SAVE_KEY = "chicken-shop-idle-save";
@@ -35,9 +43,16 @@ function loadOrCreate(): GameState {
   return deserializeState(json) ?? createInitialState();
 }
 
+/**
+ * Saves the game state to localStorage, injecting the current wall-clock time
+ * as lastOnlineTimestamp so offline earnings are calculated correctly on next load.
+ */
 function saveGame(state: GameState): void {
   try {
-    localStorage.setItem(SAVE_KEY, serializeState(state));
+    localStorage.setItem(
+      SAVE_KEY,
+      serializeState({ ...state, lastOnlineTimestamp: Date.now() }),
+    );
   } catch {
     // Storage unavailable (private browsing, sandboxed iframe, etc.)
   }
@@ -47,12 +62,20 @@ function saveGame(state: GameState): void {
 
 let state = loadOrCreate();
 
+// Apply offline earnings on startup
+const offlineResult = calculateOfflineEarnings(state, Date.now());
+state = offlineResult.state;
+if (offlineResult.moneyEarned > 0 || offlineResult.elapsedMs >= 60_000) {
+  showOfflineBanner(offlineResult);
+}
+
 // --- Buy events ---
 
 const buyChickenButton = document.getElementById("buy-chicken-button");
 if (buyChickenButton) {
   buyChickenButton.addEventListener("click", () => {
     state = buyChicken(state);
+    state = applyClickBonus(state, "buyer", Date.now());
     render(state);
   });
 }
@@ -87,6 +110,7 @@ const cookButton = document.getElementById("cook-button");
 if (cookButton) {
   cookButton.addEventListener("click", () => {
     state = clickCook(state);
+    state = applyClickBonus(state, "cook", Date.now());
     render(state);
   });
 }
@@ -105,6 +129,7 @@ const sellButton = document.getElementById("sell-button");
 if (sellButton) {
   sellButton.addEventListener("click", () => {
     state = sellChickens(state);
+    state = applyClickBonus(state, "sell", Date.now());
     render(state);
   });
 }
@@ -195,6 +220,37 @@ if (buySellingRegistersButton) {
     state = buyUpgrade(state, "sellingRegisters");
     render(state);
   });
+}
+
+// Tips upgrade (Phase 2)
+const buyTipsButton = document.getElementById("buy-tips");
+if (buyTipsButton) {
+  buyTipsButton.addEventListener("click", () => {
+    state = buyUpgrade(state, "tips");
+    render(state);
+  });
+}
+
+// --- Manager events (Phase 2) ---
+
+const managerKeys: ManagerKey[] = ["buyer", "cook", "sell"];
+
+for (const key of managerKeys) {
+  const hireBtn = document.getElementById(`manager-hire-btn-${key}`);
+  if (hireBtn) {
+    hireBtn.addEventListener("click", () => {
+      state = hireManager(state, key);
+      render(state);
+    });
+  }
+
+  const upgradeBtn = document.getElementById(`manager-upgrade-btn-${key}`);
+  if (upgradeBtn) {
+    upgradeBtn.addEventListener("click", () => {
+      state = upgradeManager(state, key);
+      render(state);
+    });
+  }
 }
 
 // --- Game Loop ---

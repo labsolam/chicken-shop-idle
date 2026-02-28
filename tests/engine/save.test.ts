@@ -38,10 +38,21 @@ describe("serializeState", () => {
     expect(parsed).toHaveProperty("earnedMilestones");
     expect(parsed).toHaveProperty("unlockedRecipes");
   });
+
+  it("includes Phase 2 state fields in serialized output", () => {
+    const state = createInitialState();
+    const parsed = JSON.parse(serializeState(state));
+    expect(parsed).toHaveProperty("managers");
+    expect(parsed).toHaveProperty("lastOnlineTimestamp");
+    expect(parsed).toHaveProperty("revenueTracker");
+    expect(parsed).toHaveProperty("totalChickensBought");
+    expect(parsed).toHaveProperty("tipsLevel");
+    expect(parsed).toHaveProperty("lastClickTimestamps");
+  });
 });
 
 describe("deserializeState", () => {
-  it("round-trips with serializeState (Phase 1 full state)", () => {
+  it("round-trips with serializeState (Phase 1 + Phase 2 full state)", () => {
     const original: GameState = {
       money: 5000,
       totalChickensCooked: 42,
@@ -68,6 +79,21 @@ describe("deserializeState", () => {
       totalRevenueCents: 75000,
       earnedMilestones: ["sold_10", "sold_50"],
       unlockedRecipes: ["basic_fried", "grilled"],
+      // Phase 2
+      managers: {
+        buyer: { hired: true, level: 2, elapsedMs: 500 },
+        cook: { hired: true, level: 1, elapsedMs: 0 },
+        sell: { hired: false, level: 1, elapsedMs: 0 },
+      },
+      lastOnlineTimestamp: 1700000000000,
+      revenueTracker: {
+        recentRevenueCents: 1500,
+        trackerElapsedMs: 30000,
+        lastComputedRatePerMs: 0.05,
+      },
+      totalChickensBought: 200,
+      tipsLevel: 2,
+      lastClickTimestamps: { buy: 1000, cook: 2000, sell: 3000 },
     };
     const json = serializeState(original);
     const restored = deserializeState(json);
@@ -151,5 +177,68 @@ describe("deserializeState", () => {
     const restored = deserializeState(json);
     expect(restored).not.toBeNull();
     expect(restored).not.toHaveProperty("extraField");
+  });
+
+  it("defaults missing Phase 2 fields from old saves", () => {
+    const oldSave = {
+      money: 1000,
+      totalChickensCooked: 10,
+      chickensReady: 2,
+      cookTimeSeconds: 5,
+      chickenPriceInCents: 100,
+      shopOpen: true,
+      lastUpdateTimestamp: 1700000000000,
+    };
+    const restored = deserializeState(JSON.stringify(oldSave));
+    expect(restored).not.toBeNull();
+    // Phase 2 defaults
+    expect(restored?.managers.buyer.hired).toBe(false);
+    expect(restored?.managers.buyer.level).toBe(1);
+    expect(restored?.managers.cook.hired).toBe(false);
+    expect(restored?.managers.sell.hired).toBe(false);
+    expect(restored?.tipsLevel).toBe(0);
+    expect(restored?.totalChickensBought).toBe(0);
+    expect(restored?.lastClickTimestamps).toEqual({ buy: 0, cook: 0, sell: 0 });
+    expect(restored?.revenueTracker.lastComputedRatePerMs).toBe(0);
+    // lastOnlineTimestamp falls back to lastUpdateTimestamp for old saves
+    expect(restored?.lastOnlineTimestamp).toBe(1700000000000);
+  });
+
+  it("deserializes valid manager state from JSON", () => {
+    const state = createInitialState();
+    const withManagers = {
+      ...state,
+      managers: {
+        buyer: { hired: true, level: 3, elapsedMs: 1500 },
+        cook: { hired: true, level: 2, elapsedMs: 500 },
+        sell: { hired: false, level: 1, elapsedMs: 0 },
+      },
+    };
+    const restored = deserializeState(serializeState(withManagers));
+    expect(restored?.managers.buyer).toEqual({
+      hired: true,
+      level: 3,
+      elapsedMs: 1500,
+    });
+    expect(restored?.managers.cook.hired).toBe(true);
+    expect(restored?.managers.sell.hired).toBe(false);
+  });
+
+  it("falls back to default manager state when manager data is malformed", () => {
+    const state = createInitialState();
+    const bad = {
+      ...state,
+      managers: {
+        buyer: { hired: "yes", level: 1, elapsedMs: 0 }, // hired is wrong type
+        cook: null,
+        sell: { hired: false, level: 1, elapsedMs: 0 },
+      },
+    };
+    const restored = deserializeState(JSON.stringify(bad));
+    expect(restored).not.toBeNull();
+    // Falls back to default for invalid entries
+    expect(restored?.managers.buyer.hired).toBe(false);
+    expect(restored?.managers.cook.hired).toBe(false);
+    expect(restored?.managers.sell.hired).toBe(false);
   });
 });

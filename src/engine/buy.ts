@@ -20,7 +20,8 @@ export type UpgradeType =
   | "chickenValue"
   | "coldStorage"
   | "cookingSlots"
-  | "sellingRegisters";
+  | "sellingRegisters"
+  | "tips";
 
 const BASE_SELL_TIME = 10; // seconds, constant for all recipes
 
@@ -32,7 +33,37 @@ const UPGRADE_CAPS: Record<UpgradeType, number> = {
   coldStorage: 10,
   cookingSlots: 10,
   sellingRegisters: 10,
+  tips: 10,
 };
+
+/**
+ * Customer Tips upgrade costs in cents (hand-tuned lookup table — doc 003).
+ * Index = current level; value = cost to buy the next level.
+ */
+const TIPS_COSTS_CENTS = [
+  500_000, // L0→L1: $5K
+  2_500_000, // L1→L2: $25K
+  12_500_000, // L2→L3: $125K
+  60_000_000, // L3→L4: $600K
+  300_000_000, // L4→L5: $3M
+  1_500_000_000, // L5→L6: $15M
+  7_500_000_000, // L6→L7: $75M
+  40_000_000_000, // L7→L8: $400M
+  200_000_000_000, // L8→L9: $2B
+  500_000_000_000, // L9→L10: $5B
+];
+
+/**
+ * Tip chance by tips upgrade level (0-10).
+ * Index = level; value = probability (0 to 1).
+ */
+const TIP_CHANCE = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5];
+
+/**
+ * Tip bonus multiplier by tips upgrade level (0-10).
+ * Index = level; value = bonus fraction (e.g. 0.25 = +25% of sale value).
+ */
+const TIP_BONUS = [0, 0.25, 0.25, 0.5, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
 
 /**
  * Cold storage upgrade costs in cents (hand-tuned lookup table — doc 003).
@@ -97,6 +128,8 @@ export function getUpgradeCost(
       return Math.floor(5000 * Math.pow(10, currentLevel));
     case "sellingRegisters":
       return Math.floor(3000 * Math.pow(10, currentLevel));
+    case "tips":
+      return TIPS_COSTS_CENTS[currentLevel] ?? Infinity;
   }
 }
 
@@ -111,6 +144,7 @@ function upgradeLevelKey(
   | "coldStorageLevel"
   | "cookingSlotsLevel"
   | "sellingRegistersLevel"
+  | "tipsLevel"
 > {
   switch (type) {
     case "cookSpeed":
@@ -125,6 +159,8 @@ function upgradeLevelKey(
       return "cookingSlotsLevel";
     case "sellingRegisters":
       return "sellingRegistersLevel";
+    case "tips":
+      return "tipsLevel";
   }
 }
 
@@ -208,4 +244,19 @@ export function getCookingSlots(level: number): number {
  */
 export function getSellingRegisters(level: number): number {
   return SELLING_REGISTERS_TABLE[level] ?? 30;
+}
+
+/**
+ * Returns the tip chance (0–1) at the given tips upgrade level.
+ */
+export function getTipChance(tipsLevel: number): number {
+  return TIP_CHANCE[tipsLevel] ?? 0.5;
+}
+
+/**
+ * Returns the tip bonus fraction at the given tips upgrade level.
+ * e.g. 0.25 means +25% of the base sale value is added as a tip.
+ */
+export function getTipBonus(tipsLevel: number): number {
+  return TIP_BONUS[tipsLevel] ?? 2.0;
 }

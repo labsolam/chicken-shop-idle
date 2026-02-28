@@ -37,20 +37,21 @@ Pure state machine with 3-step clicker flow (Buy → Cook → Sell). Cooking and
 | `.prettierrc`               | Prettier formatting config                                             |
 | `.husky/pre-commit`         | Pre-commit hook — lint-staged then tests                               |
 | `playwright.config.ts`      | Playwright e2e config — auto-starts Vite, screenshots                  |
-| `src/types/game-state.ts`   | GameState interface and initial state factory ($5.00 start)            |
+| `src/types/game-state.ts`   | GameState + ManagerState + RevenueTracker; Phase 2 fields + factory    |
 | `src/engine/buy-chicken.ts` | Buy action — spend money to add 1 raw chicken ($0.25 cost)             |
 | `src/engine/click.ts`       | Cook action — queues 1 raw chicken for timed cooking                   |
 | `src/engine/sell.ts`        | Sell action — queues cooked chickens for timed selling                 |
-| `src/engine/buy.ts`         | Upgrade system — 6 categories, costs, purchases, effective stat calcs  |
-| `src/engine/tick.ts`        | Tick function — slot-based cooking/selling, recipe prices, milestones  |
-| `src/engine/save.ts`        | Pure serialize/deserialize for game state persistence                  |
-| `src/engine/offline.ts`     | Offline earnings — currently no-op (kept for future idle mechanics)    |
+| `src/engine/buy.ts`         | Upgrade system — 7 types incl. tips; costs, purchases, effective stats |
+| `src/engine/managers.ts`    | Phase 2 managers — hire/upgrade/click-bonus; 3 manager NPCs, 10 levels |
+| `src/engine/tick.ts`        | Tick — slot cooking/selling, manager timers, tips RNG, revenue tracker |
+| `src/engine/save.ts`        | Pure serialize/deserialize — Phase 1+2 fields, old-save compat         |
+| `src/engine/offline.ts`     | Offline earnings — 30% rate × elapsed (4h cap), uses revenueTracker    |
 | `src/engine/recipes.ts`     | Recipe definitions — 8 recipes with cook time, sale value, unlock cond |
 | `src/engine/milestones.ts`  | Milestone system — thresholds, permanent multiplier rewards            |
-| `src/engine/unlocks.ts`     | Feature unlock system — reveals bulk ops and upgrades progressively    |
-| `src/ui/render.ts`          | DOM renderer — stats, timers, recipes, all upgrades, milestones        |
+| `src/engine/unlocks.ts`     | Feature unlock system — Phase 1+2 feature IDs, revenue/milestone gates |
+| `src/ui/render.ts`          | DOM renderer — Phase 1+2: manager panel, income/sec, tips, auto labels |
 | `src/ui/format.ts`          | Money formatter — tiered $K/$M/$B/$T + scientific notation             |
-| `src/main.ts`               | Entry point — events (incl. bulk/recipe), game loop (rAF), save/load   |
+| `src/main.ts`               | Entry point — Phase 1+2 events, offline banner, manager hire/upgrade   |
 | `tsconfig.json`             | TypeScript config — strict mode, path aliases (@engine, @ui, @types)   |
 | `vite.config.ts`            | Vite build config — default settings, serves at root `/` for Vercel    |
 | `vitest.config.ts`          | Vitest config — path aliases, test include pattern                     |
@@ -59,21 +60,22 @@ Pure state machine with 3-step clicker flow (Buy → Cook → Sell). Cooking and
 
 ## Test Map
 
-| Path                               | Covers                                                                           |
-| ---------------------------------- | -------------------------------------------------------------------------------- |
-| `tests/engine/buy-chicken.test.ts` | buyChicken/buyChickens — cost, storage cap, bulk buy, immutability               |
-| `tests/engine/click.test.ts`       | clickCook/clickCookBatch/selectRecipe — batch ops, recipes, immutability         |
-| `tests/engine/sell.test.ts`        | sellChickens/sellChickensBatch — queuing, batch, no-op, immutability             |
-| `tests/engine/buy.test.ts`         | buyUpgrade (6 types), getUpgradeCost, effective stats, caps, immutability        |
-| `tests/engine/tick.test.ts`        | tick() — slot/register batch, recipe cook times, stats, milestones               |
-| `tests/engine/save.test.ts`        | serializeState/deserializeState — round-trip, validation, old save compat        |
-| `tests/engine/offline.test.ts`     | calculateOfflineEarnings — no-op (idle disabled), timestamp update, immutability |
-| `tests/engine/recipes.test.ts`     | RECIPES — all 8 recipes, fields, unlock conditions, RECIPE_IDS                   |
-| `tests/engine/milestones.test.ts`  | checkMilestones, getMilestoneMultiplier, speed multipliers                       |
-| `tests/engine/unlocks.test.ts`     | isFeatureUnlocked — all feature unlock conditions                                |
-| `tests/ui/render.test.ts`          | render() + showOfflineBanner() — Phase 1 UI: recipes, upgrades, milestones       |
-| `tests/ui/format.test.ts`          | formatMoney — all tiers from cents to scientific notation                        |
-| `e2e/game.spec.ts`                 | Full browser: buy→cook→sell, cold storage, upgrade visibility (Playwright)       |
+| Path                               | Covers                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------ |
+| `tests/engine/buy-chicken.test.ts` | buyChicken/buyChickens — cost, storage cap, bulk buy, immutability             |
+| `tests/engine/click.test.ts`       | clickCook/clickCookBatch/selectRecipe — batch ops, recipes, immutability       |
+| `tests/engine/sell.test.ts`        | sellChickens/sellChickensBatch — queuing, batch, no-op, immutability           |
+| `tests/engine/buy.test.ts`         | buyUpgrade (7 types incl. tips), getUpgradeCost, getTipChance/Bonus, caps      |
+| `tests/engine/managers.test.ts`    | hireManager, upgradeManager, applyClickBonus, interval/batch formulas          |
+| `tests/engine/tick.test.ts`        | tick() — slot/register batch, manager auto, tips RNG, revenue tracker          |
+| `tests/engine/save.test.ts`        | serializeState/deserializeState — Phase 1+2 round-trip, old save defaults      |
+| `tests/engine/offline.test.ts`     | calculateOfflineEarnings — real earnings, rate fallback, timestamp logic       |
+| `tests/engine/recipes.test.ts`     | RECIPES — all 8 recipes, fields, unlock conditions, RECIPE_IDS                 |
+| `tests/engine/milestones.test.ts`  | checkMilestones, getMilestoneMultiplier, speed multipliers                     |
+| `tests/engine/unlocks.test.ts`     | isFeatureUnlocked — Phase 1+2 feature unlock conditions                        |
+| `tests/ui/render.test.ts`          | render() + showOfflineBanner() — Phase 1+2 UI: manager panel, income/sec, tips |
+| `tests/ui/format.test.ts`          | formatMoney — all tiers from cents to scientific notation                      |
+| `e2e/game.spec.ts`                 | Full browser: buy→cook→sell, cold storage, upgrade visibility (Playwright)     |
 
 ## Design Decisions
 
@@ -84,13 +86,14 @@ Pure state machine with 3-step clicker flow (Buy → Cook → Sell). Cooking and
 | 003 | `docs/decisions/003-pure-state-machine.md`             | Engine is pure functions, no side effects              |
 | 004 | `docs/decisions/004-static-analysis-and-formatting.md` | ESLint + Prettier + Husky pre-commit enforcement       |
 | 005 | `docs/decisions/005-ui-testing-strategy.md`            | happy-dom unit tests + Playwright e2e with screenshots |
-| 006 | `docs/decisions/006-persistence-and-offline.md`        | localStorage save + 8-hour offline earnings cap        |
+| 006 | `docs/decisions/006-persistence-and-offline.md`        | localStorage save; offline cap now 4h (see 013)        |
 | 007 | `docs/decisions/007-github-pages-deploy.md`            | ~~GitHub Pages deploy~~ Superseded by 009              |
 | 008 | `docs/decisions/008-buy-upgrades.md`                   | Two purchasable upgrades with exponential cost scaling |
 | 009 | `docs/decisions/009-vercel-deploy.md`                  | Vercel deployment — auto-detect Vite, preview deploys  |
 | 010 | `docs/decisions/010-buy-cook-sell-clicker.md`          | 3-step clicker flow: Buy → Cook → Sell                 |
 | 011 | `docs/decisions/011-cooking-selling-timers.md`         | 10s cooking + 10s selling timers via tick()            |
 | 012 | `docs/decisions/012-phase1-enhanced-core-loop.md`      | Phase 1: recipes, milestones, 6 upgrades, bulk ops     |
+| 013 | `docs/decisions/013-manager-speed-formula.md`          | Manager speed: reciprocal formula (not subtractive)    |
 
 ## Plans
 
@@ -99,22 +102,22 @@ Plans live in two directories based on status:
 - **`docs/plans/todo/`** — Active and upcoming plans
 - **`docs/plans/complete/`** — Finished plans (moved here when done)
 
-| ID  | File                                                      | Status   | Summary                                                   |
-| --- | --------------------------------------------------------- | -------- | --------------------------------------------------------- |
-| 001 | `docs/plans/complete/001-initial-scaffold.md`             | Complete | Project setup, core loop, tests, docs                     |
-| 002 | `docs/plans/complete/002-buy-upgrades.md`                 | Complete | Buy upgrades for cook speed + chicken value               |
-| 003 | `docs/plans/complete/003-update-agents-docs.md`           | Complete | Add missing config files and commands to map              |
-| 004 | `docs/plans/complete/004-click-to-cook.md`                | Complete | Click-to-cook clicker button                              |
-| 005 | `docs/plans/complete/005-migrate-to-vercel.md`            | Complete | Migrate deploy from GitHub Pages to Vercel                |
-| 006 | `docs/plans/complete/006-buy-cook-sell-clicker.md`        | Complete | 3-step clicker: Buy → Cook → Sell                         |
-| 007 | `docs/plans/complete/007-cooking-selling-timers.md`       | Complete | 10s cooking + 10s selling timers                          |
-| 008 | `docs/plans/complete/008-phase1-enhanced-core-loop.md`    | Complete | Implement Phase 1: enhanced core loop from strategy docs  |
-| 009 | `docs/plans/todo/009-phase2-managers-and-automation.md`   | Todo     | Implement Phase 2: managers, automation, offline earnings |
-| 010 | `docs/plans/todo/010-phase3-equipment-and-staff.md`       | Todo     | Implement Phase 3: equipment, staff, passive bonuses      |
-| 011 | `docs/plans/todo/011-phase4-prestige-stars.md`            | Todo     | Implement Phase 4: prestige layer 1 (Stars), upgrade tree |
-| 012 | `docs/plans/todo/012-phase5-super-managers.md`            | Todo     | Implement Phase 5: super managers, boosts, auto-recipe    |
-| 013 | `docs/plans/todo/013-phase6-prestige-crowns-franchise.md` | Todo     | Implement Phase 6: prestige layer 2 (Crowns), franchise   |
-| 014 | `docs/plans/todo/014-phase7-prestige-diamonds-endgame.md` | Todo     | Implement Phase 7: prestige layer 3 (Diamonds), endgame   |
+| ID  | File                                                      | Status      | Summary                                                   |
+| --- | --------------------------------------------------------- | ----------- | --------------------------------------------------------- |
+| 001 | `docs/plans/complete/001-initial-scaffold.md`             | Complete    | Project setup, core loop, tests, docs                     |
+| 002 | `docs/plans/complete/002-buy-upgrades.md`                 | Complete    | Buy upgrades for cook speed + chicken value               |
+| 003 | `docs/plans/complete/003-update-agents-docs.md`           | Complete    | Add missing config files and commands to map              |
+| 004 | `docs/plans/complete/004-click-to-cook.md`                | Complete    | Click-to-cook clicker button                              |
+| 005 | `docs/plans/complete/005-migrate-to-vercel.md`            | Complete    | Migrate deploy from GitHub Pages to Vercel                |
+| 006 | `docs/plans/complete/006-buy-cook-sell-clicker.md`        | Complete    | 3-step clicker: Buy → Cook → Sell                         |
+| 007 | `docs/plans/complete/007-cooking-selling-timers.md`       | Complete    | 10s cooking + 10s selling timers                          |
+| 008 | `docs/plans/complete/008-phase1-enhanced-core-loop.md`    | Complete    | Implement Phase 1: enhanced core loop from strategy docs  |
+| 009 | `docs/plans/todo/009-phase2-managers-and-automation.md`   | In Progress | Implement Phase 2: managers, automation, offline earnings |
+| 010 | `docs/plans/todo/010-phase3-equipment-and-staff.md`       | Todo        | Implement Phase 3: equipment, staff, passive bonuses      |
+| 011 | `docs/plans/todo/011-phase4-prestige-stars.md`            | Todo        | Implement Phase 4: prestige layer 1 (Stars), upgrade tree |
+| 012 | `docs/plans/todo/012-phase5-super-managers.md`            | Todo        | Implement Phase 5: super managers, boosts, auto-recipe    |
+| 013 | `docs/plans/todo/013-phase6-prestige-crowns-franchise.md` | Todo        | Implement Phase 6: prestige layer 2 (Crowns), franchise   |
+| 014 | `docs/plans/todo/014-phase7-prestige-diamonds-endgame.md` | Todo        | Implement Phase 7: prestige layer 3 (Diamonds), endgame   |
 
 ## Conventions
 

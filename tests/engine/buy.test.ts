@@ -8,6 +8,8 @@ import {
   getColdStorageCapacity,
   getCookingSlots,
   getSellingRegisters,
+  getTipChance,
+  getTipBonus,
 } from "@engine/buy";
 import { createInitialState, GameState } from "../../src/types/game-state";
 
@@ -298,5 +300,81 @@ describe("getSellingRegisters", () => {
 
   it("returns 30 at level 10 (max)", () => {
     expect(getSellingRegisters(10)).toBe(30);
+  });
+});
+
+describe("getTipChance", () => {
+  it("returns 0 at level 0 (no tips)", () => {
+    expect(getTipChance(0)).toBe(0);
+  });
+
+  it("returns 0.05 at level 1 (5% chance)", () => {
+    expect(getTipChance(1)).toBe(0.05);
+  });
+
+  it("returns 0.5 at level 10 (50% chance)", () => {
+    expect(getTipChance(10)).toBe(0.5);
+  });
+
+  it("increases with level", () => {
+    expect(getTipChance(2)).toBeGreaterThan(getTipChance(1));
+    expect(getTipChance(5)).toBeGreaterThan(getTipChance(2));
+  });
+});
+
+describe("getTipBonus", () => {
+  it("returns 0 at level 0 (no bonus)", () => {
+    expect(getTipBonus(0)).toBe(0);
+  });
+
+  it("returns 0.25 at level 1 (+25% of sale value)", () => {
+    expect(getTipBonus(1)).toBe(0.25);
+  });
+
+  it("returns 2.0 at level 10 (+200% of sale value)", () => {
+    expect(getTipBonus(10)).toBe(2.0);
+  });
+});
+
+describe("getUpgradeCost — tips", () => {
+  it("tips cost at level 0 (L0→L1): 500_000 cents ($5K)", () => {
+    expect(getUpgradeCost("tips", 0)).toBe(500_000);
+  });
+
+  it("tips cost at level 1 (L1→L2): 2_500_000 cents ($25K)", () => {
+    expect(getUpgradeCost("tips", 1)).toBe(2_500_000);
+  });
+
+  it("tips cost increases with level", () => {
+    expect(getUpgradeCost("tips", 1)).toBeGreaterThan(
+      getUpgradeCost("tips", 0),
+    );
+    expect(getUpgradeCost("tips", 2)).toBeGreaterThan(
+      getUpgradeCost("tips", 1),
+    );
+  });
+});
+
+describe("buyUpgrade — tips", () => {
+  it("deducts cost and increments tips level", () => {
+    const cost = getUpgradeCost("tips", 0);
+    const state = stateWith({ money: cost, tipsLevel: 0 });
+    const result = buyUpgrade(state, "tips");
+    expect(result.tipsLevel).toBe(1);
+    expect(result.money).toBe(0);
+  });
+
+  it("returns unchanged state when money is insufficient", () => {
+    const state = stateWith({ money: 0, tipsLevel: 0 });
+    const result = buyUpgrade(state, "tips");
+    expect(result.tipsLevel).toBe(0);
+    expect(result.money).toBe(0);
+  });
+
+  it("returns unchanged state when tips is at cap (10)", () => {
+    const state = stateWith({ money: 1_000_000_000_000, tipsLevel: 10 });
+    const result = buyUpgrade(state, "tips");
+    expect(result.tipsLevel).toBe(10);
+    expect(result.money).toBe(1_000_000_000_000);
   });
 });

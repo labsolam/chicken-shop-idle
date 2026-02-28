@@ -93,3 +93,73 @@ describe("isFeatureUnlocked", () => {
     expect(isFeatureUnlocked(state, "bulk_cook_x5")).toBe(false);
   });
 });
+
+describe("isFeatureUnlocked — Phase 2 features", () => {
+  it("tips_upgrade unlocks at $5K total earned (500_000 cents)", () => {
+    expect(
+      isFeatureUnlocked(
+        stateWith({ totalRevenueCents: 499_999 }),
+        "tips_upgrade",
+      ),
+    ).toBe(false);
+    expect(
+      isFeatureUnlocked(
+        stateWith({ totalRevenueCents: 500_000 }),
+        "tips_upgrade",
+      ),
+    ).toBe(true);
+  });
+
+  it("manager_cook unlocks at $25K total earned (2_500_000 cents)", () => {
+    expect(
+      isFeatureUnlocked(
+        stateWith({ totalRevenueCents: 2_499_999 }),
+        "manager_cook",
+      ),
+    ).toBe(false);
+    expect(
+      isFeatureUnlocked(
+        stateWith({ totalRevenueCents: 2_500_000 }),
+        "manager_cook",
+      ),
+    ).toBe(true);
+  });
+
+  it("manager_sell unlocks at $25K total earned (2_500_000 cents)", () => {
+    expect(
+      isFeatureUnlocked(
+        stateWith({ totalRevenueCents: 2_499_999 }),
+        "manager_sell",
+      ),
+    ).toBe(false);
+    expect(
+      isFeatureUnlocked(
+        stateWith({ totalRevenueCents: 2_500_000 }),
+        "manager_sell",
+      ),
+    ).toBe(true);
+  });
+
+  it("manager_buyer unlocks at $50K total earned (5_000_000 cents)", () => {
+    expect(
+      isFeatureUnlocked(
+        stateWith({ totalRevenueCents: 4_999_999 }),
+        "manager_buyer",
+      ),
+    ).toBe(false);
+    expect(
+      isFeatureUnlocked(
+        stateWith({ totalRevenueCents: 5_000_000 }),
+        "manager_buyer",
+      ),
+    ).toBe(true);
+  });
+
+  it("Phase 2 features are not unlocked in initial state", () => {
+    const state = createInitialState();
+    expect(isFeatureUnlocked(state, "tips_upgrade")).toBe(false);
+    expect(isFeatureUnlocked(state, "manager_cook")).toBe(false);
+    expect(isFeatureUnlocked(state, "manager_sell")).toBe(false);
+    expect(isFeatureUnlocked(state, "manager_buyer")).toBe(false);
+  });
+});

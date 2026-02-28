@@ -1,9 +1,11 @@
-import { GameState } from "../types/game-state";
+import { GameState, ManagerState } from "../types/game-state";
 
 /**
  * AGENT CONTEXT: Pure serialization/deserialization for game state.
  * localStorage I/O is handled in main.ts, keeping these functions testable.
  * Phase 1 new fields are handled as optional (with safe defaults) for old-save compat.
+ * Phase 2 new fields: managers, lastOnlineTimestamp, revenueTracker,
+ *   totalChickensBought, tipsLevel, lastClickTimestamps.
  */
 
 const STATE_FIELDS: Array<{ key: keyof GameState; type: string }> = [
@@ -33,7 +35,26 @@ const OPTIONAL_NUMBER_FIELDS: Array<keyof GameState> = [
   "sellingRegistersLevel",
   "totalChickensSold",
   "totalRevenueCents",
+  // Phase 2 additions
+  "lastOnlineTimestamp",
+  "totalChickensBought",
+  "tipsLevel",
 ];
+
+function isManagerState(v: unknown): v is ManagerState {
+  if (typeof v !== "object" || v === null) return false;
+  const obj = v as Record<string, unknown>;
+  return (
+    typeof obj.hired === "boolean" &&
+    typeof obj.level === "number" &&
+    typeof obj.elapsedMs === "number"
+  );
+}
+
+function deserializeManager(v: unknown): ManagerState {
+  if (isManagerState(v)) return v;
+  return { hired: false, level: 1, elapsedMs: 0 };
+}
 
 export function serializeState(state: GameState): string {
   return JSON.stringify(state);
@@ -79,6 +100,51 @@ export function deserializeState(json: string): GameState | null {
     return null;
   }
 
+  // Phase 2: managers (optional nested object — falls back to defaults)
+  const rawManagers =
+    typeof obj.managers === "object" && obj.managers !== null
+      ? (obj.managers as Record<string, unknown>)
+      : {};
+
+  // Phase 2: revenueTracker (optional nested object)
+  const rawTracker =
+    typeof obj.revenueTracker === "object" && obj.revenueTracker !== null
+      ? (obj.revenueTracker as Record<string, unknown>)
+      : {};
+
+  const revenueTracker = {
+    recentRevenueCents:
+      typeof rawTracker.recentRevenueCents === "number"
+        ? rawTracker.recentRevenueCents
+        : 0,
+    trackerElapsedMs:
+      typeof rawTracker.trackerElapsedMs === "number"
+        ? rawTracker.trackerElapsedMs
+        : 0,
+    lastComputedRatePerMs:
+      typeof rawTracker.lastComputedRatePerMs === "number"
+        ? rawTracker.lastComputedRatePerMs
+        : 0,
+  };
+
+  // Phase 2: lastClickTimestamps (optional nested object)
+  const rawClicks =
+    typeof obj.lastClickTimestamps === "object" &&
+    obj.lastClickTimestamps !== null
+      ? (obj.lastClickTimestamps as Record<string, unknown>)
+      : {};
+
+  const lastClickTimestamps = {
+    buy: typeof rawClicks.buy === "number" ? rawClicks.buy : 0,
+    cook: typeof rawClicks.cook === "number" ? rawClicks.cook : 0,
+    sell: typeof rawClicks.sell === "number" ? rawClicks.sell : 0,
+  };
+
+  // For old saves lacking lastOnlineTimestamp, fall back to lastUpdateTimestamp
+  const lastOnlineTimestamp =
+    (obj.lastOnlineTimestamp as number | undefined) ??
+    (obj.lastUpdateTimestamp as number);
+
   return {
     money: obj.money as number,
     totalChickensCooked: obj.totalChickensCooked as number,
@@ -114,5 +180,16 @@ export function deserializeState(json: string): GameState | null {
     unlockedRecipes: Array.isArray(obj.unlockedRecipes)
       ? (obj.unlockedRecipes as string[])
       : ["basic_fried"],
+    // Phase 2 fields with safe defaults
+    managers: {
+      buyer: deserializeManager(rawManagers.buyer),
+      cook: deserializeManager(rawManagers.cook),
+      sell: deserializeManager(rawManagers.sell),
+    },
+    lastOnlineTimestamp,
+    revenueTracker,
+    totalChickensBought: (obj.totalChickensBought as number) ?? 0,
+    tipsLevel: (obj.tipsLevel as number) ?? 0,
+    lastClickTimestamps,
   };
 }
