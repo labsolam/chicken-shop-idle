@@ -3,6 +3,13 @@
  * The game uses a 3-step clicker flow: Buy → Cook → Sell.
  * All monetary values are in integer cents to avoid floating point issues.
  * Cooking and selling are timed actions processed by tick().
+ *
+ * Phase 1 fields added: sellSpeedLevel, coldStorageLevel, cookingSlotsLevel,
+ * sellingRegistersLevel, activeRecipe, cookingRecipeId, totalChickensSold,
+ * totalRevenueCents, earnedMilestones, unlockedRecipes.
+ *
+ * Deprecated (kept for save compat): chickenPriceInCents, cookTimeSeconds, sellTimeSeconds.
+ * tick() no longer reads these — it uses recipe-based values instead.
  */
 
 export interface GameState {
@@ -18,10 +25,16 @@ export interface GameState {
   /** Chickens currently cooked and ready to sell */
   chickensReady: number;
 
-  /** Base seconds to cook one chicken (reduced by upgrades) */
+  /**
+   * @deprecated Superseded by recipe-based cook times.
+   * Kept for old-save loading compatibility. Default: 10.
+   */
   cookTimeSeconds: number;
 
-  /** Sale price per chicken in cents */
+  /**
+   * @deprecated Superseded by recipe-based values.
+   * Kept for old-save loading compatibility. Default: 50 (Basic Fried Chicken).
+   */
   chickenPriceInCents: number;
 
   /** Whether the shop is currently open */
@@ -39,17 +52,58 @@ export interface GameState {
   /** Chickens queued or in-progress for cooking */
   cookingCount: number;
 
-  /** Milliseconds elapsed cooking the current chicken */
+  /** Milliseconds elapsed cooking the current batch */
   cookingElapsedMs: number;
 
   /** Chickens queued or in-progress for selling */
   sellingCount: number;
 
-  /** Milliseconds elapsed selling the current chicken */
+  /** Milliseconds elapsed selling the current batch */
   sellingElapsedMs: number;
 
-  /** Base seconds to sell one chicken */
+  /**
+   * @deprecated Superseded by getEffectiveSellTime().
+   * Kept for old-save loading compatibility. Default: 10.
+   */
   sellTimeSeconds: number;
+
+  // --- Phase 1 fields ---
+
+  /** Current sell-speed upgrade level (0 = no upgrades) */
+  sellSpeedLevel: number;
+
+  /** Cold storage capacity upgrade level (0 = 10 raw chicken cap) */
+  coldStorageLevel: number;
+
+  /** Cooking slots upgrade level (0 = 1 slot) */
+  cookingSlotsLevel: number;
+
+  /** Selling registers upgrade level (0 = 1 register) */
+  sellingRegistersLevel: number;
+
+  /** ID of the recipe currently selected for new cook jobs */
+  activeRecipe: string;
+
+  /**
+   * ID of the recipe currently cooking (may differ from activeRecipe
+   * when player switches mid-cook; syncs to activeRecipe when cookingCount hits 0).
+   */
+  cookingRecipeId: string;
+
+  /** Total chickens sold this prestige run (lifetime for unlock tracking) */
+  totalChickensSold: number;
+
+  /** Total revenue earned in cents this prestige run (for unlock tracking) */
+  totalRevenueCents: number;
+
+  /** IDs of milestones already earned this prestige run */
+  earnedMilestones: string[];
+
+  /**
+   * Recipe IDs that have been permanently unlocked.
+   * Persists through prestige in Phase 4+.
+   */
+  unlockedRecipes: string[];
 }
 
 export function createInitialState(): GameState {
@@ -59,7 +113,7 @@ export function createInitialState(): GameState {
     chickensBought: 0,
     chickensReady: 0,
     cookTimeSeconds: 10,
-    chickenPriceInCents: 100,
+    chickenPriceInCents: 50,
     shopOpen: true,
     lastUpdateTimestamp: Date.now(),
     cookSpeedLevel: 0,
@@ -69,5 +123,15 @@ export function createInitialState(): GameState {
     sellingCount: 0,
     sellingElapsedMs: 0,
     sellTimeSeconds: 10,
+    sellSpeedLevel: 0,
+    coldStorageLevel: 0,
+    cookingSlotsLevel: 0,
+    sellingRegistersLevel: 0,
+    activeRecipe: "basic_fried",
+    cookingRecipeId: "basic_fried",
+    totalChickensSold: 0,
+    totalRevenueCents: 0,
+    earnedMilestones: [],
+    unlockedRecipes: ["basic_fried"],
   };
 }

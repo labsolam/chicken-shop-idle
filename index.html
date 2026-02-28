@@ -7,7 +7,7 @@
     <style>
       body {
         font-family: monospace;
-        max-width: 600px;
+        max-width: 640px;
         margin: 40px auto;
         padding: 0 20px;
         background: #1a1a1a;
@@ -16,8 +16,13 @@
       h1 {
         color: #f5a623;
       }
+      h2 {
+        color: #f5a623;
+        font-size: 16px;
+        margin: 0 0 12px;
+      }
       .stat {
-        margin: 8px 0;
+        margin: 6px 0;
       }
       .label {
         color: #888;
@@ -27,9 +32,10 @@
         font-weight: bold;
       }
       .action-button {
-        margin-top: 16px;
-        padding: 12px 24px;
-        font-size: 16px;
+        margin-top: 8px;
+        margin-right: 6px;
+        padding: 10px 18px;
+        font-size: 14px;
         background: #f5a623;
         color: #1a1a1a;
         border: none;
@@ -51,15 +57,28 @@
         color: #888;
         cursor: not-allowed;
       }
-      .upgrades {
-        margin-top: 24px;
-        border-top: 1px solid #333;
-        padding-top: 16px;
+      .action-row {
+        margin: 10px 0 4px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
       }
-      .upgrades h2 {
+      .action-row .action-button {
+        margin-top: 0;
+        margin-right: 0;
+      }
+      .timer-status {
+        margin: 4px 0 0;
+        padding: 4px 0;
         color: #f5a623;
-        font-size: 16px;
-        margin: 0 0 12px;
+        font-size: 13px;
+        min-height: 20px;
+      }
+      .section {
+        margin-top: 20px;
+        border-top: 1px solid #333;
+        padding-top: 14px;
       }
       .upgrade-row {
         display: flex;
@@ -74,12 +93,14 @@
         color: #888;
         font-size: 12px;
       }
-      .timer-status {
-        margin: 4px 0 0;
-        padding: 4px 0;
+      .recipe-active {
         color: #f5a623;
-        font-size: 14px;
-        min-height: 22px;
+        font-weight: bold;
+        margin-bottom: 8px;
+      }
+      .milestone-progress {
+        color: #aaa;
+        font-size: 13px;
       }
       #offline-banner {
         display: none;
@@ -95,6 +116,7 @@
     <h1>Chicken Shop</h1>
     <div id="offline-banner"></div>
 
+    <!-- Stats -->
     <div class="stat">
       <span class="label">Money:</span>
       <span class="value" id="money">$5.00</span>
@@ -102,48 +124,190 @@
     <div class="stat">
       <span class="label">Raw Chickens:</span>
       <span class="value" id="chickens-bought">0</span>
+      <span
+        id="cold-storage-display"
+        style="color: #888; font-size: 13px; margin-left: 8px"
+      ></span>
     </div>
     <div class="stat">
       <span class="label">Cooked Chickens:</span>
       <span class="value" id="chickens-ready">0</span>
+      <span
+        id="cooking-slots-display"
+        style="color: #888; font-size: 13px; margin-left: 8px"
+      ></span>
+    </div>
+    <div class="stat">
+      <span class="label">Selling Registers:</span>
+      <span class="value" id="selling-registers-display"></span>
     </div>
     <div class="stat">
       <span class="label">Total Cooked:</span>
       <span class="value" id="total-cooked">0</span>
     </div>
+    <div class="stat">
+      <span class="label">Total Sold:</span>
+      <span class="value" id="total-sold">0</span>
+    </div>
 
-    <button id="buy-chicken-button" class="action-button">
-      Buy Chicken ($0.25)
-    </button>
-    <button id="cook-button" class="action-button">Cook Chicken</button>
+    <!-- Buy actions -->
+    <div class="action-row">
+      <button id="buy-chicken-button" class="action-button">
+        Buy Chicken ($0.25)
+      </button>
+      <button id="bulk-buy-x5" class="action-button" style="display: none">
+        Buy x5
+      </button>
+      <button id="bulk-buy-x10" class="action-button" style="display: none">
+        Buy x10
+      </button>
+      <button id="bulk-buy-x25" class="action-button" style="display: none">
+        Buy x25
+      </button>
+    </div>
+
+    <!-- Cook actions -->
+    <div class="action-row">
+      <button id="cook-button" class="action-button">Cook</button>
+      <button id="bulk-cook-x5" class="action-button" style="display: none">
+        Cook x5
+      </button>
+    </div>
     <div class="timer-status" id="cooking-status"></div>
-    <button id="sell-button" class="action-button">Sell Chickens</button>
+
+    <!-- Sell actions -->
+    <div class="action-row">
+      <button id="sell-button" class="action-button">Sell</button>
+      <button id="bulk-sell-x5" class="action-button" style="display: none">
+        Sell x5
+      </button>
+      <button id="bulk-sell-x10" class="action-button" style="display: none">
+        Sell x10
+      </button>
+      <button id="bulk-sell-x25" class="action-button" style="display: none">
+        Sell x25
+      </button>
+    </div>
     <div class="timer-status" id="selling-status"></div>
 
-    <div class="upgrades">
+    <!-- Recipe selector -->
+    <div class="section">
+      <h2>Recipe</h2>
+      <div class="recipe-active">
+        Active: <span id="active-recipe-name">Basic Fried Chicken</span>
+      </div>
+      <div>
+        <button id="recipe-btn-basic_fried" class="action-button"></button>
+        <button
+          id="recipe-btn-grilled"
+          class="action-button"
+          style="display: none"
+        ></button>
+        <button
+          id="recipe-btn-wings"
+          class="action-button"
+          style="display: none"
+        ></button>
+        <button
+          id="recipe-btn-burger"
+          class="action-button"
+          style="display: none"
+        ></button>
+        <button
+          id="recipe-btn-katsu"
+          class="action-button"
+          style="display: none"
+        ></button>
+        <button
+          id="recipe-btn-rotisserie"
+          class="action-button"
+          style="display: none"
+        ></button>
+        <button
+          id="recipe-btn-feast_platter"
+          class="action-button"
+          style="display: none"
+        ></button>
+        <button
+          id="recipe-btn-signature"
+          class="action-button"
+          style="display: none"
+        ></button>
+      </div>
+    </div>
+
+    <!-- Upgrades -->
+    <div class="section">
       <h2>Upgrades</h2>
+
       <div class="upgrade-row">
         <div class="upgrade-info">
-          <div>
-            Faster Cooking
-            <span class="upgrade-level" id="cook-speed-level">Lv 0</span>
-          </div>
+          Faster Cooking
+          <span class="upgrade-level" id="cook-speed-level">Lv 0</span>
         </div>
         <button id="buy-cook-speed" class="action-button">
           Buy - <span id="cook-speed-cost">$5.00</span>
         </button>
       </div>
+
       <div class="upgrade-row">
         <div class="upgrade-info">
-          <div>
-            Better Chicken
-            <span class="upgrade-level" id="chicken-value-level">Lv 0</span>
-          </div>
+          Faster Selling
+          <span class="upgrade-level" id="sell-speed-level">Lv 0</span>
         </div>
-        <button id="buy-chicken-value" class="action-button">
-          Buy - <span id="chicken-value-cost">$5.00</span>
+        <button id="buy-sell-speed" class="action-button">
+          Buy - <span id="sell-speed-cost">$5.00</span>
         </button>
       </div>
+
+      <div class="upgrade-row">
+        <div class="upgrade-info">
+          Better Chicken
+          <span class="upgrade-level" id="chicken-value-level">Lv 0</span>
+        </div>
+        <button id="buy-chicken-value" class="action-button">
+          Buy - <span id="chicken-value-cost">$10.00</span>
+        </button>
+      </div>
+
+      <div id="upgrade-cold-storage" class="upgrade-row" style="display: none">
+        <div class="upgrade-info">
+          Cold Storage
+          <span class="upgrade-level" id="cold-storage-level">Lv 0</span>
+        </div>
+        <button id="buy-cold-storage" class="action-button">
+          Buy - <span id="cold-storage-cost">$15.00</span>
+        </button>
+      </div>
+
+      <div id="upgrade-cooking-slots" class="upgrade-row" style="display: none">
+        <div class="upgrade-info">
+          Cooking Slots
+          <span class="upgrade-level" id="cooking-slots-level">Lv 0</span>
+        </div>
+        <button id="buy-cooking-slots" class="action-button">
+          Buy - <span id="cooking-slots-cost"></span>
+        </button>
+      </div>
+
+      <div
+        id="upgrade-selling-registers"
+        class="upgrade-row"
+        style="display: none"
+      >
+        <div class="upgrade-info">
+          Selling Registers
+          <span class="upgrade-level" id="selling-registers-level">Lv 0</span>
+        </div>
+        <button id="buy-selling-registers" class="action-button">
+          Buy - <span id="selling-registers-cost"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Milestone progress -->
+    <div class="section">
+      <div class="milestone-progress" id="milestone-progress"></div>
     </div>
 
     <script type="module" src="/src/main.ts"></script>

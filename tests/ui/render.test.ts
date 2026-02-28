@@ -5,6 +5,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, showOfflineBanner } from "../../src/ui/render";
 import { createInitialState, GameState } from "../../src/types/game-state";
 import { OfflineResult } from "../../src/engine/offline";
+import { MILESTONES } from "../../src/engine/milestones";
 
 function stateWith(overrides: Partial<GameState>): GameState {
   return { ...createInitialState(), ...overrides };
@@ -16,18 +17,54 @@ function setupDOM(): void {
     <span id="chickens-bought"></span>
     <span id="chickens-ready"></span>
     <span id="total-cooked"></span>
+    <span id="total-sold"></span>
+    <span id="cold-storage-display"></span>
+    <span id="cooking-slots-display"></span>
+    <span id="selling-registers-display"></span>
     <button id="buy-chicken-button"></button>
     <button id="cook-button"></button>
     <div id="cooking-status"></div>
     <button id="sell-button"></button>
     <div id="selling-status"></div>
+    <button id="bulk-buy-x5"></button>
+    <button id="bulk-buy-x10"></button>
+    <button id="bulk-buy-x25"></button>
+    <button id="bulk-cook-x5"></button>
+    <button id="bulk-sell-x5"></button>
+    <button id="bulk-sell-x10"></button>
+    <button id="bulk-sell-x25"></button>
+    <span id="active-recipe-name"></span>
+    <button id="recipe-btn-basic_fried"></button>
+    <button id="recipe-btn-grilled"></button>
+    <button id="recipe-btn-wings"></button>
+    <button id="recipe-btn-burger"></button>
+    <button id="recipe-btn-katsu"></button>
+    <button id="recipe-btn-rotisserie"></button>
+    <button id="recipe-btn-feast_platter"></button>
+    <button id="recipe-btn-signature"></button>
     <div id="offline-banner" style="display: none;"></div>
     <span id="cook-speed-level"></span>
     <span id="cook-speed-cost"></span>
     <button id="buy-cook-speed"></button>
+    <span id="sell-speed-level"></span>
+    <span id="sell-speed-cost"></span>
+    <button id="buy-sell-speed"></button>
     <span id="chicken-value-level"></span>
     <span id="chicken-value-cost"></span>
     <button id="buy-chicken-value"></button>
+    <div id="upgrade-cold-storage"></div>
+    <span id="cold-storage-level"></span>
+    <span id="cold-storage-cost"></span>
+    <button id="buy-cold-storage"></button>
+    <div id="upgrade-cooking-slots"></div>
+    <span id="cooking-slots-level"></span>
+    <span id="cooking-slots-cost"></span>
+    <button id="buy-cooking-slots"></button>
+    <div id="upgrade-selling-registers"></div>
+    <span id="selling-registers-level"></span>
+    <span id="selling-registers-cost"></span>
+    <button id="buy-selling-registers"></button>
+    <div id="milestone-progress"></div>
   `;
 }
 
@@ -63,6 +100,26 @@ describe("render", () => {
   it("displays total chickens cooked", () => {
     render(stateWith({ totalChickensCooked: 42 }));
     expect(getText("total-cooked")).toBe("42");
+  });
+
+  it("displays total chickens sold", () => {
+    render(stateWith({ totalChickensSold: 15 }));
+    expect(getText("total-sold")).toBe("15");
+  });
+
+  it("displays cold storage capacity", () => {
+    render(stateWith({ chickensBought: 3, coldStorageLevel: 0 }));
+    expect(getText("cold-storage-display")).toBe("Storage: 3/10");
+  });
+
+  it("displays cooking slots count", () => {
+    render(stateWith({ cookingSlotsLevel: 1 }));
+    expect(getText("cooking-slots-display")).toBe("Slots: 2");
+  });
+
+  it("displays selling registers count", () => {
+    render(stateWith({ sellingRegistersLevel: 2 }));
+    expect(getText("selling-registers-display")).toBe("Registers: 3");
   });
 
   it("disables buy chicken button when money is insufficient", () => {
@@ -126,10 +183,23 @@ describe("render", () => {
     expect(getText("chicken-value-level")).toBe("Lv 5");
   });
 
-  it("displays upgrade costs", () => {
+  it("displays upgrade costs (cookSpeed: $5, chickenValue: $10 at level 0)", () => {
     render(stateWith({ cookSpeedLevel: 0, chickenValueLevel: 0 }));
     expect(getText("cook-speed-cost")).toBe("$5.00");
-    expect(getText("chicken-value-cost")).toBe("$5.00");
+    expect(getText("chicken-value-cost")).toBe("$10.00"); // Phase 1: 1000 × 3.5^0 = $10
+  });
+
+  it("displays sell speed upgrade level and cost at level 0", () => {
+    render(stateWith({ sellSpeedLevel: 0 }));
+    expect(getText("sell-speed-level")).toBe("Lv 0");
+    expect(getText("sell-speed-cost")).toBe("$5.00");
+  });
+
+  it("shows MAX for upgrades at cap", () => {
+    render(stateWith({ cookSpeedLevel: 30 }));
+    expect(getText("cook-speed-cost")).toBe("MAX");
+    const btn = document.getElementById("buy-cook-speed") as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
   });
 
   it("disables buy buttons when money is insufficient", () => {
@@ -144,8 +214,9 @@ describe("render", () => {
     expect(valueBtn.disabled).toBe(true);
   });
 
-  it("enables buy buttons when money is sufficient", () => {
-    render(stateWith({ money: 500, cookSpeedLevel: 0, chickenValueLevel: 0 }));
+  it("enables buy buttons when money is sufficient for both upgrades", () => {
+    // cookSpeed costs 500, chickenValue costs 1000 at level 0
+    render(stateWith({ money: 1000, cookSpeedLevel: 0, chickenValueLevel: 0 }));
     const cookBtn = document.getElementById(
       "buy-cook-speed",
     ) as HTMLButtonElement;
@@ -195,6 +266,66 @@ describe("render", () => {
   it("clears selling status when no chickens are selling", () => {
     render(stateWith({ sellingCount: 0 }));
     expect(getText("selling-status")).toBe("");
+  });
+
+  it("displays active recipe name", () => {
+    render(stateWith({ activeRecipe: "basic_fried" }));
+    expect(getText("active-recipe-name")).toBe("Basic Fried Chicken");
+  });
+
+  it("shows basic_fried recipe button (always unlocked)", () => {
+    render(stateWith({ unlockedRecipes: ["basic_fried"] }));
+    const btn = document.getElementById(
+      "recipe-btn-basic_fried",
+    ) as HTMLButtonElement;
+    expect(btn.style.display).not.toBe("none");
+  });
+
+  it("hides locked recipe buttons", () => {
+    render(stateWith({ unlockedRecipes: ["basic_fried"] }));
+    const btn = document.getElementById(
+      "recipe-btn-grilled",
+    ) as HTMLButtonElement;
+    expect(btn.style.display).toBe("none");
+  });
+
+  it("disables the active recipe button", () => {
+    render(
+      stateWith({
+        activeRecipe: "basic_fried",
+        unlockedRecipes: ["basic_fried"],
+      }),
+    );
+    const btn = document.getElementById(
+      "recipe-btn-basic_fried",
+    ) as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+  });
+
+  it("hides bulk buy buttons when feature locked", () => {
+    render(stateWith({ totalRevenueCents: 0 }));
+    const btn = document.getElementById("bulk-buy-x5") as HTMLButtonElement;
+    expect(btn.style.display).toBe("none");
+  });
+
+  it("shows bulk buy x5 when feature unlocked ($50 revenue)", () => {
+    render(stateWith({ totalRevenueCents: 5000, money: 25 }));
+    const btn = document.getElementById("bulk-buy-x5") as HTMLButtonElement;
+    expect(btn.style.display).not.toBe("none");
+  });
+
+  it("displays milestone progress for next sold milestone", () => {
+    render(stateWith({ totalChickensSold: 5, totalRevenueCents: 0 }));
+    const text = getText("milestone-progress");
+    expect(text).toContain("5/10 sold");
+  });
+
+  it("shows all milestones earned message when all earned", () => {
+    const allIds = MILESTONES.map((m) => m.id);
+    const state = stateWith({ earnedMilestones: allIds });
+    render(state);
+    const text = getText("milestone-progress");
+    expect(text).toBe("All milestones earned!");
   });
 });
 
