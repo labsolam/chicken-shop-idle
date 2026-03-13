@@ -1,7 +1,7 @@
 import { GameState } from "../types/game-state";
 
 /**
- * AGENT CONTEXT: Feature unlock system for Phase 1.
+ * AGENT CONTEXT: Feature unlock system for Phase 1 + Phase 2.
  * Features unlock progressively as the player earns revenue or sells chickens.
  * Unlocked features control UI visibility and button availability.
  * Unlock conditions are based on totalRevenueCents and totalChickensSold.
@@ -13,6 +13,11 @@ import { GameState } from "../types/game-state";
  *   4. 2nd Register        — $300 total earned (unlock the upgrade UI)
  *   5. Bulk Buy x10        — $5K total earned
  *   6. Bulk Cook x5        — 2,500 chickens sold (milestone)
+ *
+ * Phase 2 additions (doc 004):
+ *   7. Tips upgrade        — $5K total earned
+ *   8. Manager: Chef Carmen / Seller Sam — $25K total earned
+ *   9. Manager: Buyer Bob  — $50K total earned
  */
 
 export type FeatureId =
@@ -25,7 +30,11 @@ export type FeatureId =
   | "bulk_buy_x25"
   | "bulk_sell_x5"
   | "bulk_sell_x10"
-  | "bulk_sell_x25";
+  | "bulk_sell_x25"
+  | "tips_upgrade"
+  | "manager_cook"
+  | "manager_sell"
+  | "manager_buyer";
 
 /** Returns whether a feature has been unlocked based on current game state. */
 export function isFeatureUnlocked(
@@ -54,5 +63,14 @@ export function isFeatureUnlocked(
       return state.totalRevenueCents >= 500000; // $5K
     case "bulk_sell_x25":
       return state.totalRevenueCents >= 5000000; // $50K
+    // Phase 2
+    case "tips_upgrade":
+      return state.totalRevenueCents >= 500000; // $5K
+    case "manager_cook":
+      return state.totalRevenueCents >= 2_500_000; // $25K
+    case "manager_sell":
+      return state.totalRevenueCents >= 2_500_000; // $25K
+    case "manager_buyer":
+      return state.totalRevenueCents >= 5_000_000; // $50K
   }
 }

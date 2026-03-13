@@ -8,9 +8,28 @@
  * sellingRegistersLevel, activeRecipe, cookingRecipeId, totalChickensSold,
  * totalRevenueCents, earnedMilestones, unlockedRecipes.
  *
+ * Phase 2 fields added: managers, lastOnlineTimestamp, revenueTracker,
+ * totalChickensBought, tipsLevel, lastClickTimestamps.
+ *
  * Deprecated (kept for save compat): chickenPriceInCents, cookTimeSeconds, sellTimeSeconds.
  * tick() no longer reads these — it uses recipe-based values instead.
  */
+
+export interface ManagerState {
+  hired: boolean;
+  level: number;
+  /** Milliseconds elapsed since last action */
+  elapsedMs: number;
+}
+
+export interface RevenueTracker {
+  /** Revenue earned in the current 60s tracking window */
+  recentRevenueCents: number;
+  /** Elapsed time in the current window (ms) */
+  trackerElapsedMs: number;
+  /** Cached revenue rate from the last completed 60s window (cents/ms) */
+  lastComputedRatePerMs: number;
+}
 
 export interface GameState {
   /** Total money in cents. 100 = $1.00 */
@@ -104,7 +123,50 @@ export interface GameState {
    * Persists through prestige in Phase 4+.
    */
   unlockedRecipes: string[];
+
+  // --- Phase 2 fields ---
+
+  /** Manager states for the three Tier 1 managers */
+  managers: {
+    buyer: ManagerState;
+    cook: ManagerState;
+    sell: ManagerState;
+  };
+
+  /**
+   * Timestamp (ms since epoch) written on each save.
+   * Used exclusively to compute offline elapsed time in calculateOfflineEarnings().
+   * Distinct from lastUpdateTimestamp which tracks game-loop timing.
+   * Defaults to 0 for brand-new games; calculateOfflineEarnings falls back to
+   * lastUpdateTimestamp when this is 0.
+   */
+  lastOnlineTimestamp: number;
+
+  /** Rolling revenue tracker for offline earnings base rate */
+  revenueTracker: RevenueTracker;
+
+  /** Total chickens auto-purchased by Buyer Bob (lifetime) */
+  totalChickensBought: number;
+
+  /** Customer Tips upgrade level (0 = no tips, 10 = max) */
+  tipsLevel: number;
+
+  /**
+   * Wall-clock timestamps (ms since epoch) of last click bonus per action.
+   * Used to enforce the 1s cooldown on click bonuses.
+   */
+  lastClickTimestamps: {
+    buyer: number;
+    cook: number;
+    sell: number;
+  };
 }
+
+const DEFAULT_MANAGER_STATE: ManagerState = {
+  hired: false,
+  level: 1,
+  elapsedMs: 0,
+};
 
 export function createInitialState(): GameState {
   return {
@@ -133,5 +195,24 @@ export function createInitialState(): GameState {
     totalRevenueCents: 0,
     earnedMilestones: [],
     unlockedRecipes: ["basic_fried"],
+    // Phase 2
+    managers: {
+      buyer: { ...DEFAULT_MANAGER_STATE },
+      cook: { ...DEFAULT_MANAGER_STATE },
+      sell: { ...DEFAULT_MANAGER_STATE },
+    },
+    lastOnlineTimestamp: 0,
+    revenueTracker: {
+      recentRevenueCents: 0,
+      trackerElapsedMs: 0,
+      lastComputedRatePerMs: 0,
+    },
+    totalChickensBought: 0,
+    tipsLevel: 0,
+    lastClickTimestamps: {
+      buyer: 0,
+      cook: 0,
+      sell: 0,
+    },
   };
 }

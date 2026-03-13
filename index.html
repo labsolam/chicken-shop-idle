@@ -110,6 +110,32 @@
         border-left: 4px solid #4caf50;
         color: #c8e6c9;
       }
+      .income-rate {
+        color: #4caf50;
+        font-size: 13px;
+        margin: 4px 0;
+        min-height: 18px;
+      }
+      .manager-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 8px 0;
+        padding: 8px;
+        background: #222;
+        border-left: 3px solid #f5a623;
+      }
+      .manager-info {
+        flex: 1;
+      }
+      .manager-name {
+        font-weight: bold;
+        color: #f5a623;
+      }
+      .manager-desc {
+        font-size: 12px;
+        color: #888;
+      }
     </style>
   </head>
   <body>
@@ -121,6 +147,7 @@
       <span class="label">Money:</span>
       <span class="value" id="money">$5.00</span>
     </div>
+    <div class="income-rate" id="income-per-second"></div>
     <div class="stat">
       <span class="label">Raw Chickens:</span>
       <span class="value" id="chickens-bought">0</span>
@@ -236,6 +263,71 @@
       </div>
     </div>
 
+    <!-- Managers (Phase 2) -->
+    <div class="section">
+      <h2>Managers</h2>
+
+      <!-- Chef Carmen (Auto-Cook) — unlocks at $25K revenue -->
+      <div id="manager-section-cook" class="manager-row" style="display: none">
+        <div class="manager-info">
+          <div class="manager-name">Chef Carmen</div>
+          <div class="manager-desc">
+            Auto-Cook &middot; <span id="manager-level-cook"></span>
+          </div>
+        </div>
+        <div id="manager-hire-cook">
+          <button id="manager-hire-btn-cook" class="action-button">
+            Hire - <span id="manager-hire-cost-cook"></span>
+          </button>
+        </div>
+        <div id="manager-upgrade-cook" style="display: none">
+          <button id="manager-upgrade-btn-cook" class="action-button">
+            Upgrade - <span id="manager-upgrade-cost-cook"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Seller Sam (Auto-Sell) — unlocks at $25K revenue -->
+      <div id="manager-section-sell" class="manager-row" style="display: none">
+        <div class="manager-info">
+          <div class="manager-name">Seller Sam</div>
+          <div class="manager-desc">
+            Auto-Sell &middot; <span id="manager-level-sell"></span>
+          </div>
+        </div>
+        <div id="manager-hire-sell">
+          <button id="manager-hire-btn-sell" class="action-button">
+            Hire - <span id="manager-hire-cost-sell"></span>
+          </button>
+        </div>
+        <div id="manager-upgrade-sell" style="display: none">
+          <button id="manager-upgrade-btn-sell" class="action-button">
+            Upgrade - <span id="manager-upgrade-cost-sell"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Buyer Bob (Auto-Buy) — unlocks at $50K revenue -->
+      <div id="manager-section-buyer" class="manager-row" style="display: none">
+        <div class="manager-info">
+          <div class="manager-name">Buyer Bob</div>
+          <div class="manager-desc">
+            Auto-Buy &middot; <span id="manager-level-buyer"></span>
+          </div>
+        </div>
+        <div id="manager-hire-buyer">
+          <button id="manager-hire-btn-buyer" class="action-button">
+            Hire - <span id="manager-hire-cost-buyer"></span>
+          </button>
+        </div>
+        <div id="manager-upgrade-buyer" style="display: none">
+          <button id="manager-upgrade-btn-buyer" class="action-button">
+            Upgrade - <span id="manager-upgrade-cost-buyer"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Upgrades -->
     <div class="section">
       <h2>Upgrades</h2>
@@ -301,6 +393,17 @@
         </div>
         <button id="buy-selling-registers" class="action-button">
           Buy - <span id="selling-registers-cost"></span>
+        </button>
+      </div>
+
+      <!-- Tips upgrade (Phase 2) — unlocks at $5K revenue -->
+      <div id="upgrade-tips" class="upgrade-row" style="display: none">
+        <div class="upgrade-info">
+          Customer Tips
+          <span class="upgrade-level" id="tips-level">Lv 0</span>
+        </div>
+        <button id="buy-tips" class="action-button">
+          Buy - <span id="tips-cost"></span>
         </button>
       </div>
     </div>

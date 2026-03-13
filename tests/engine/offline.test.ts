@@ -38,7 +38,7 @@ describe("calculateOfflineEarnings", () => {
     expect(result.state.chickensBought).toBe(2);
   });
 
-  it("caps elapsed time at 8 hours", () => {
+  it("caps elapsed time at 4 hours (MAX_OFFLINE_MS)", () => {
     const twelveHoursMs = 12 * 60 * 60 * 1000;
     const state = stateAt(0);
     const result = calculateOfflineEarnings(state, twelveHoursMs);
@@ -74,5 +74,68 @@ describe("calculateOfflineEarnings", () => {
     const original = { ...state };
     calculateOfflineEarnings(state, 11000);
     expect(state).toEqual(original);
+  });
+
+  it("earns money based on lastComputedRatePerMs × elapsed × 0.30", () => {
+    // rate: 0.1 cents/ms; elapsed: 10000ms → earned = round(0.1 * 10000 * 0.30) = 300
+    const state = stateAt(0, {
+      revenueTracker: {
+        recentRevenueCents: 0,
+        trackerElapsedMs: 0,
+        lastComputedRatePerMs: 0.1,
+      },
+    });
+    const result = calculateOfflineEarnings(state, 10_000);
+    expect(result.moneyEarned).toBe(300);
+  });
+
+  it("uses lastOnlineTimestamp when non-zero (ignores lastUpdateTimestamp)", () => {
+    // lastOnlineTimestamp=5000 → elapsed = 10000-5000 = 5000ms
+    const state = stateAt(1000, {
+      lastOnlineTimestamp: 5000,
+      revenueTracker: {
+        recentRevenueCents: 0,
+        trackerElapsedMs: 0,
+        lastComputedRatePerMs: 1,
+      },
+    });
+    const result = calculateOfflineEarnings(state, 10_000);
+    expect(result.elapsedMs).toBe(5000);
+    expect(result.moneyEarned).toBe(Math.round(1 * 5000 * 0.3));
+  });
+
+  it("falls back to lastUpdateTimestamp when lastOnlineTimestamp is 0", () => {
+    // lastUpdateTimestamp=3000, lastOnlineTimestamp=0 → elapsed = 10000-3000 = 7000ms
+    const state = stateAt(3000, {
+      lastOnlineTimestamp: 0,
+      revenueTracker: {
+        recentRevenueCents: 0,
+        trackerElapsedMs: 0,
+        lastComputedRatePerMs: 1,
+      },
+    });
+    const result = calculateOfflineEarnings(state, 10_000);
+    expect(result.elapsedMs).toBe(7000);
+    expect(result.moneyEarned).toBe(Math.round(1 * 7000 * 0.3));
+  });
+
+  it("uses partial window rate as fallback when lastComputedRatePerMs is 0", () => {
+    // partial window: 6000 cents in 60000ms → rate = 0.1 cents/ms
+    // elapsed: 10000ms → earned = round(0.1 * 10000 * 0.30) = 300
+    const state = stateAt(0, {
+      revenueTracker: {
+        recentRevenueCents: 6000,
+        trackerElapsedMs: 60_000,
+        lastComputedRatePerMs: 0,
+      },
+    });
+    const result = calculateOfflineEarnings(state, 10_000);
+    expect(result.moneyEarned).toBe(300);
+  });
+
+  it("updates lastOnlineTimestamp to now in returned state", () => {
+    const state = stateAt(1000);
+    const result = calculateOfflineEarnings(state, 50000);
+    expect(result.state.lastOnlineTimestamp).toBe(50000);
   });
 });
