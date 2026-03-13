@@ -259,7 +259,7 @@ describe("applyClickBonus", () => {
         cook: { hired: true, level: 1, elapsedMs: 0 },
         sell: { hired: false, level: 1, elapsedMs: 0 },
       },
-      lastClickTimestamps: { buy: 0, cook: 0, sell: 0 },
+      lastClickTimestamps: { buyer: 0, cook: 0, sell: 0 },
     });
     const now = 5000;
     const result = applyClickBonus(state, "cook", now);
@@ -288,7 +288,7 @@ describe("applyClickBonus", () => {
         cook: { hired: true, level: 1, elapsedMs: 0 },
         sell: { hired: false, level: 1, elapsedMs: 0 },
       },
-      lastClickTimestamps: { buy: 0, cook: 4500, sell: 0 }, // clicked 500ms ago
+      lastClickTimestamps: { buyer: 0, cook: 4500, sell: 0 }, // clicked 500ms ago
     });
     const result = applyClickBonus(state, "cook", 5000); // 500ms later (< 1s)
     expect(result.money).toBe(0);
@@ -302,7 +302,7 @@ describe("applyClickBonus", () => {
         cook: { hired: true, level: 1, elapsedMs: 0 },
         sell: { hired: false, level: 1, elapsedMs: 0 },
       },
-      lastClickTimestamps: { buy: 0, cook: 4000, sell: 0 }, // clicked 1000ms ago
+      lastClickTimestamps: { buyer: 0, cook: 4000, sell: 0 }, // clicked 1000ms ago
     });
     const result = applyClickBonus(state, "cook", 5000); // exactly 1s later
     expect(result.money).toBeGreaterThan(0);

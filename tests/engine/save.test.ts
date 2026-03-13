@@ -93,7 +93,7 @@ describe("deserializeState", () => {
       },
       totalChickensBought: 200,
       tipsLevel: 2,
-      lastClickTimestamps: { buy: 1000, cook: 2000, sell: 3000 },
+      lastClickTimestamps: { buyer: 1000, cook: 2000, sell: 3000 },
     };
     const json = serializeState(original);
     const restored = deserializeState(json);
@@ -198,7 +198,11 @@ describe("deserializeState", () => {
     expect(restored?.managers.sell.hired).toBe(false);
     expect(restored?.tipsLevel).toBe(0);
     expect(restored?.totalChickensBought).toBe(0);
-    expect(restored?.lastClickTimestamps).toEqual({ buy: 0, cook: 0, sell: 0 });
+    expect(restored?.lastClickTimestamps).toEqual({
+      buyer: 0,
+      cook: 0,
+      sell: 0,
+    });
     expect(restored?.revenueTracker.lastComputedRatePerMs).toBe(0);
     // lastOnlineTimestamp falls back to lastUpdateTimestamp for old saves
     expect(restored?.lastOnlineTimestamp).toBe(1700000000000);

@@ -156,7 +156,7 @@ export interface GameState {
    * Used to enforce the 1s cooldown on click bonuses.
    */
   lastClickTimestamps: {
-    buy: number;
+    buyer: number;
     cook: number;
     sell: number;
   };
@@ -210,7 +210,7 @@ export function createInitialState(): GameState {
     totalChickensBought: 0,
     tipsLevel: 0,
     lastClickTimestamps: {
-      buy: 0,
+      buyer: 0,
       cook: 0,
       sell: 0,
     },

@@ -135,7 +135,7 @@ export function deserializeState(json: string): GameState | null {
       : {};
 
   const lastClickTimestamps = {
-    buy: typeof rawClicks.buy === "number" ? rawClicks.buy : 0,
+    buyer: typeof rawClicks.buyer === "number" ? rawClicks.buyer : 0,
     cook: typeof rawClicks.cook === "number" ? rawClicks.cook : 0,
     sell: typeof rawClicks.sell === "number" ? rawClicks.sell : 0,
   };
