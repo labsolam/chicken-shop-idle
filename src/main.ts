@@ -292,10 +292,16 @@ for (const staffId of STAFF_IDS) {
 
 // --- Game Loop ---
 
+/** Read ?timeScale=N from URL to speed up game time (useful for testing). */
+const TIME_SCALE = Math.max(
+  1,
+  Number(new URLSearchParams(window.location.search).get("timeScale")) || 1,
+);
+
 let lastTimestamp = performance.now();
 
 function gameLoop(now: number): void {
-  const deltaMs = now - lastTimestamp;
+  const deltaMs = (now - lastTimestamp) * TIME_SCALE;
   lastTimestamp = now;
 
   state = tick(state, deltaMs);
