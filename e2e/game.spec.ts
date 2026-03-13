@@ -8,6 +8,7 @@ import { test, expect } from "@playwright/test";
  *
  * Phase 1: basic_fried chicken costs $0.25 raw and sells for $0.50.
  * Starting money: $5.00 (500 cents).
+ * Phase 3: equipment and staff sections hidden by default (unlock at $1K revenue).
  *
  * Run: npm run test:e2e
  * Screenshots saved to: e2e/results/
@@ -157,5 +158,93 @@ test.describe("Buy → Cook → Sell flow", () => {
 
     const sellButton = page.locator("#sell-button");
     await expect(sellButton).toBeDisabled();
+  });
+});
+
+test.describe("Equipment & Staff (Phase 3)", () => {
+  test("equipment section is hidden at start", async ({ page }) => {
+    await page.goto("/");
+
+    await expect(page.locator("#equipment-section")).toBeHidden();
+  });
+
+  test("staff section is hidden at start", async ({ page }) => {
+    await page.goto("/");
+
+    await expect(page.locator("#staff-section")).toBeHidden();
+  });
+
+  test("equipment and staff sections become visible when revenue threshold met", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    // Inject state with enough revenue to unlock equipment/staff panels
+    await page.evaluate(() => {
+      const saveKey = "chicken-shop-idle-save";
+      const state = {
+        money: 999_999_999,
+        totalChickensCooked: 0,
+        chickensBought: 0,
+        chickensReady: 0,
+        cookTimeSeconds: 10,
+        chickenPriceInCents: 50,
+        shopOpen: true,
+        lastUpdateTimestamp: Date.now(),
+        totalRevenueCents: 10_000_000,
+        totalChickensSold: 0,
+        cookSpeedLevel: 0,
+        chickenValueLevel: 0,
+        cookingCount: 0,
+        cookingElapsedMs: 0,
+        sellingCount: 0,
+        sellingElapsedMs: 0,
+        sellTimeSeconds: 10,
+        sellSpeedLevel: 0,
+        coldStorageLevel: 0,
+        cookingSlotsLevel: 0,
+        sellingRegistersLevel: 0,
+        activeRecipe: "basic_fried",
+        cookingRecipeId: "basic_fried",
+        earnedMilestones: [],
+        unlockedRecipes: ["basic_fried"],
+        managers: {
+          buyer: { hired: false, level: 1, elapsedMs: 0 },
+          cook: { hired: false, level: 1, elapsedMs: 0 },
+          sell: { hired: false, level: 1, elapsedMs: 0 },
+        },
+        lastOnlineTimestamp: Date.now(),
+        revenueTracker: {
+          recentRevenueCents: 0,
+          trackerElapsedMs: 0,
+          lastComputedRatePerMs: 0,
+        },
+        totalChickensBought: 0,
+        tipsLevel: 0,
+        lastClickTimestamps: { buyer: 0, cook: 0, sell: 0 },
+        equipment: {},
+        staff: {},
+        lastActivityTimestamp: 0,
+        continuousIdleMs: 0,
+      };
+      localStorage.setItem(saveKey, JSON.stringify(state));
+    });
+
+    await page.reload();
+
+    // Equipment and staff sections should now be visible
+    await expect(page.locator("#equipment-section")).toBeVisible();
+    await expect(page.locator("#staff-section")).toBeVisible();
+
+    // Basic oven should be visible (unlock at $1K revenue, we have $100K)
+    await expect(page.locator("#equip-basic_oven")).toBeVisible();
+
+    // Line Cook should be visible (unlock at $1K revenue)
+    await expect(page.locator("#staff-line_cook")).toBeVisible();
+
+    await page.screenshot({
+      path: "e2e/screenshots/equipment-staff-visible.png",
+      fullPage: true,
+    });
   });
 });

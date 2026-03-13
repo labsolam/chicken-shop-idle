@@ -11,9 +11,22 @@
  * Phase 2 fields added: managers, lastOnlineTimestamp, revenueTracker,
  * totalChickensBought, tipsLevel, lastClickTimestamps.
  *
+ * Phase 3 fields added: equipment, staff, idleDiminishingReturns
+ * (lastActivityTimestamp, continuousIdleMs).
+ *
  * Deprecated (kept for save compat): chickenPriceInCents, cookTimeSeconds, sellTimeSeconds.
  * tick() no longer reads these — it uses recipe-based values instead.
  */
+
+export interface EquipmentState {
+  owned: boolean;
+  level: number;
+}
+
+export interface StaffState {
+  hired: boolean;
+  level: number;
+}
 
 export interface ManagerState {
   hired: boolean;
@@ -160,6 +173,20 @@ export interface GameState {
     cook: number;
     sell: number;
   };
+
+  // --- Phase 3 fields ---
+
+  /** Equipment ownership and levels keyed by equipment ID */
+  equipment: Record<string, EquipmentState>;
+
+  /** Staff hiring and levels keyed by staff ID */
+  staff: Record<string, StaffState>;
+
+  /** Wall-clock timestamp of last player activity (click). Reset on any click. */
+  lastActivityTimestamp: number;
+
+  /** Continuous idle time in ms (tracked by tick, reset on player click) */
+  continuousIdleMs: number;
 }
 
 const DEFAULT_MANAGER_STATE: ManagerState = {
@@ -214,5 +241,10 @@ export function createInitialState(): GameState {
       cook: 0,
       sell: 0,
     },
+    // Phase 3
+    equipment: {},
+    staff: {},
+    lastActivityTimestamp: 0,
+    continuousIdleMs: 0,
   };
 }

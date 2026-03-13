@@ -14,6 +14,8 @@ import {
   applyClickBonus,
   type ManagerKey,
 } from "./engine/managers";
+import { buyEquipment, EQUIPMENT_IDS } from "./engine/equipment";
+import { hireStaff, STAFF_IDS } from "./engine/staff";
 
 /**
  * AGENT CONTEXT: Application entry point.
@@ -23,6 +25,7 @@ import {
  * Auto-saves every 30s + on page unload.
  * Phase 1: wires up bulk operations, recipe selection, all 6 upgrades.
  * Phase 2: wires up managers, click bonuses, tips upgrade, offline earnings.
+ * Phase 3: wires up equipment, staff, idle reset on click.
  */
 
 const SAVE_KEY = "chicken-shop-idle-save";
@@ -69,11 +72,17 @@ if (offlineResult.moneyEarned > 0 || offlineResult.elapsedMs >= 60_000) {
   showOfflineBanner(offlineResult);
 }
 
+/** Reset idle diminishing returns on any player click (Phase 3). */
+function resetIdle(): void {
+  state = { ...state, continuousIdleMs: 0, lastActivityTimestamp: Date.now() };
+}
+
 // --- Buy events ---
 
 const buyChickenButton = document.getElementById("buy-chicken-button");
 if (buyChickenButton) {
   buyChickenButton.addEventListener("click", () => {
+    resetIdle();
     state = buyChicken(state);
     state = applyClickBonus(state, "buyer", Date.now());
     render(state);
@@ -109,6 +118,7 @@ if (bulkBuyX25) {
 const cookButton = document.getElementById("cook-button");
 if (cookButton) {
   cookButton.addEventListener("click", () => {
+    resetIdle();
     state = clickCook(state);
     state = applyClickBonus(state, "cook", Date.now());
     render(state);
@@ -128,6 +138,7 @@ if (bulkCookX5) {
 const sellButton = document.getElementById("sell-button");
 if (sellButton) {
   sellButton.addEventListener("click", () => {
+    resetIdle();
     state = sellChickens(state);
     state = applyClickBonus(state, "sell", Date.now());
     render(state);
@@ -248,6 +259,32 @@ for (const key of managerKeys) {
   if (upgradeBtn) {
     upgradeBtn.addEventListener("click", () => {
       state = upgradeManager(state, key);
+      render(state);
+    });
+  }
+}
+
+// --- Equipment events (Phase 3) ---
+
+for (const equipId of EQUIPMENT_IDS) {
+  const btn = document.getElementById(`equip-btn-${equipId}`);
+  if (btn) {
+    btn.addEventListener("click", () => {
+      resetIdle();
+      state = buyEquipment(state, equipId);
+      render(state);
+    });
+  }
+}
+
+// --- Staff events (Phase 3) ---
+
+for (const staffId of STAFF_IDS) {
+  const btn = document.getElementById(`staff-btn-${staffId}`);
+  if (btn) {
+    btn.addEventListener("click", () => {
+      resetIdle();
+      state = hireStaff(state, staffId);
       render(state);
     });
   }
