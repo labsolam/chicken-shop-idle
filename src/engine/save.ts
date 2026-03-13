@@ -1,4 +1,9 @@
-import { GameState, ManagerState } from "../types/game-state";
+import {
+  GameState,
+  ManagerState,
+  EquipmentState,
+  StaffState,
+} from "../types/game-state";
 
 /**
  * AGENT CONTEXT: Pure serialization/deserialization for game state.
@@ -6,6 +11,7 @@ import { GameState, ManagerState } from "../types/game-state";
  * Phase 1 new fields are handled as optional (with safe defaults) for old-save compat.
  * Phase 2 new fields: managers, lastOnlineTimestamp, revenueTracker,
  *   totalChickensBought, tipsLevel, lastClickTimestamps.
+ * Phase 3 new fields: equipment, staff, lastActivityTimestamp, continuousIdleMs.
  */
 
 const STATE_FIELDS: Array<{ key: keyof GameState; type: string }> = [
@@ -39,7 +45,37 @@ const OPTIONAL_NUMBER_FIELDS: Array<keyof GameState> = [
   "lastOnlineTimestamp",
   "totalChickensBought",
   "tipsLevel",
+  // Phase 3 additions
+  "lastActivityTimestamp",
+  "continuousIdleMs",
 ];
+
+function isEquipmentState(v: unknown): v is EquipmentState {
+  if (typeof v !== "object" || v === null) return false;
+  const obj = v as Record<string, unknown>;
+  return typeof obj.owned === "boolean" && typeof obj.level === "number";
+}
+
+function isStaffState(v: unknown): v is StaffState {
+  if (typeof v !== "object" || v === null) return false;
+  const obj = v as Record<string, unknown>;
+  return typeof obj.hired === "boolean" && typeof obj.level === "number";
+}
+
+function deserializeRecord<T>(
+  raw: unknown,
+  validator: (v: unknown) => v is T,
+): Record<string, T> {
+  if (typeof raw !== "object" || raw === null) return {};
+  const obj = raw as Record<string, unknown>;
+  const result: Record<string, T> = {};
+  for (const key of Object.keys(obj)) {
+    if (validator(obj[key])) {
+      result[key] = obj[key] as T;
+    }
+  }
+  return result;
+}
 
 function isManagerState(v: unknown): v is ManagerState {
   if (typeof v !== "object" || v === null) return false;
@@ -191,5 +227,10 @@ export function deserializeState(json: string): GameState | null {
     totalChickensBought: (obj.totalChickensBought as number) ?? 0,
     tipsLevel: (obj.tipsLevel as number) ?? 0,
     lastClickTimestamps,
+    // Phase 3 fields with safe defaults
+    equipment: deserializeRecord(obj.equipment, isEquipmentState),
+    staff: deserializeRecord(obj.staff, isStaffState),
+    lastActivityTimestamp: (obj.lastActivityTimestamp as number) ?? 0,
+    continuousIdleMs: (obj.continuousIdleMs as number) ?? 0,
   };
 }

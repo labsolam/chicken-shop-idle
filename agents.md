@@ -31,32 +31,35 @@ Pure state machine with 3-step clicker flow (Buy → Cook → Sell). Cooking and
 
 ## Source Map
 
-| Path                        | Purpose                                                                |
-| --------------------------- | ---------------------------------------------------------------------- |
-| `eslint.config.js`          | ESLint flat config — strict TS rules + Prettier compat                 |
-| `.prettierrc`               | Prettier formatting config                                             |
-| `.husky/pre-commit`         | Pre-commit hook — lint-staged then tests                               |
-| `playwright.config.ts`      | Playwright e2e config — auto-starts Vite, screenshots                  |
-| `src/types/game-state.ts`   | GameState + ManagerState + RevenueTracker; Phase 2 fields + factory    |
-| `src/engine/buy-chicken.ts` | Buy action — spend money to add 1 raw chicken ($0.25 cost)             |
-| `src/engine/click.ts`       | Cook action — queues 1 raw chicken for timed cooking                   |
-| `src/engine/sell.ts`        | Sell action — queues cooked chickens for timed selling                 |
-| `src/engine/buy.ts`         | Upgrade system — 7 types incl. tips; costs, purchases, effective stats |
-| `src/engine/managers.ts`    | Phase 2 managers — hire/upgrade/click-bonus; 3 manager NPCs, 10 levels |
-| `src/engine/tick.ts`        | Tick — slot cooking/selling, manager timers, tips RNG, revenue tracker |
-| `src/engine/save.ts`        | Pure serialize/deserialize — Phase 1+2 fields, old-save compat         |
-| `src/engine/offline.ts`     | Offline earnings — 30% rate × elapsed (4h cap), uses revenueTracker    |
-| `src/engine/recipes.ts`     | Recipe definitions — 8 recipes with cook time, sale value, unlock cond |
-| `src/engine/milestones.ts`  | Milestone system — thresholds, permanent multiplier rewards            |
-| `src/engine/unlocks.ts`     | Feature unlock system — Phase 1+2 feature IDs, revenue/milestone gates |
-| `src/ui/render.ts`          | DOM renderer — Phase 1+2: manager panel, income/sec, tips, auto labels |
-| `src/ui/format.ts`          | Money formatter — tiered $K/$M/$B/$T + scientific notation             |
-| `src/main.ts`               | Entry point — Phase 1+2 events, offline banner, manager hire/upgrade   |
-| `tsconfig.json`             | TypeScript config — strict mode, path aliases (@engine, @ui, @types)   |
-| `vite.config.ts`            | Vite build config — default settings, serves at root `/` for Vercel    |
-| `vitest.config.ts`          | Vitest config — path aliases, test include pattern                     |
-| `index.html`                | HTML entry point — game UI shell, inline styles, module script         |
-| `CLAUDE.md`                 | Claude Code auto-loaded config — points agents to agents.md            |
+| Path                        | Purpose                                                                 |
+| --------------------------- | ----------------------------------------------------------------------- |
+| `eslint.config.js`          | ESLint flat config — strict TS rules + Prettier compat                  |
+| `.prettierrc`               | Prettier formatting config                                              |
+| `.husky/pre-commit`         | Pre-commit hook — lint-staged then tests                                |
+| `playwright.config.ts`      | Playwright e2e config — auto-starts Vite, screenshots                   |
+| `src/types/game-state.ts`   | GameState + ManagerState + EquipmentState + StaffState; Phase 3 fields  |
+| `src/engine/buy-chicken.ts` | Buy action — spend money to add 1 raw chicken ($0.25 cost)              |
+| `src/engine/click.ts`       | Cook action — queues 1 raw chicken for timed cooking                    |
+| `src/engine/sell.ts`        | Sell action — queues cooked chickens for timed selling                  |
+| `src/engine/buy.ts`         | Upgrade system — 7 types incl. tips; costs, purchases, Accountant disc  |
+| `src/engine/managers.ts`    | Phase 2 managers — hire/upgrade/click-bonus; 3 manager NPCs, 10 levels  |
+| `src/engine/equipment.ts`   | Phase 3 equipment — 13 items, buy/upgrade, speed/value/slot multipliers |
+| `src/engine/staff.ts`       | Phase 3 staff — 6 members, hire/upgrade, speed/value/cost multipliers   |
+| `src/engine/idle.ts`        | Idle diminishing returns — 8h→80%, 10h→60% efficiency ramp              |
+| `src/engine/tick.ts`        | Tick — Phase 3: equip/staff multipliers, idle tracking, all Phase 1+2   |
+| `src/engine/save.ts`        | Pure serialize/deserialize — Phase 1+2+3 fields, old-save compat        |
+| `src/engine/offline.ts`     | Offline earnings — 30% rate × elapsed (4h cap), uses revenueTracker     |
+| `src/engine/recipes.ts`     | Recipe definitions — 8 recipes with cook time, sale value, unlock cond  |
+| `src/engine/milestones.ts`  | Milestone system — thresholds, permanent multiplier rewards             |
+| `src/engine/unlocks.ts`     | Feature unlock system — Phase 1+2+3 feature IDs, equip/staff panels     |
+| `src/ui/render.ts`          | DOM renderer — Phase 1+2+3: equip/staff panels, manager, income/sec     |
+| `src/ui/format.ts`          | Money formatter — tiered $K/$M/$B/$T + scientific notation              |
+| `src/main.ts`               | Entry point — Phase 1+2+3 events, equip/staff buy, idle reset           |
+| `tsconfig.json`             | TypeScript config — strict mode, path aliases (@engine, @ui, @types)    |
+| `vite.config.ts`            | Vite build config — default settings, serves at root `/` for Vercel     |
+| `vitest.config.ts`          | Vitest config — path aliases, test include pattern                      |
+| `index.html`                | HTML entry point — game UI shell, inline styles, module script          |
+| `CLAUDE.md`                 | Claude Code auto-loaded config — points agents to agents.md             |
 
 ## Test Map
 
@@ -67,15 +70,18 @@ Pure state machine with 3-step clicker flow (Buy → Cook → Sell). Cooking and
 | `tests/engine/sell.test.ts`        | sellChickens/sellChickensBatch — queuing, batch, no-op, immutability           |
 | `tests/engine/buy.test.ts`         | buyUpgrade (7 types incl. tips), getUpgradeCost, getTipChance/Bonus, caps      |
 | `tests/engine/managers.test.ts`    | hireManager, upgradeManager, applyClickBonus, interval/batch formulas          |
+| `tests/engine/equipment.test.ts`   | buyEquipment, getEquipmentCost, cook/sell/value multipliers, type bonuses      |
+| `tests/engine/staff.test.ts`       | hireStaff, getStaffCost, speed/value multipliers, accountant discount          |
+| `tests/engine/idle.test.ts`        | getIdleEfficiency — 8h boundary, 9h midpoint, 10h cap, linear interpolation    |
 | `tests/engine/tick.test.ts`        | tick() — slot/register batch, manager auto, tips RNG, revenue tracker          |
-| `tests/engine/save.test.ts`        | serializeState/deserializeState — Phase 1+2 round-trip, old save defaults      |
+| `tests/engine/save.test.ts`        | serializeState/deserializeState — Phase 1+2+3 round-trip, old save defaults    |
 | `tests/engine/offline.test.ts`     | calculateOfflineEarnings — real earnings, rate fallback, timestamp logic       |
 | `tests/engine/recipes.test.ts`     | RECIPES — all 8 recipes, fields, unlock conditions, RECIPE_IDS                 |
 | `tests/engine/milestones.test.ts`  | checkMilestones, getMilestoneMultiplier, speed multipliers                     |
-| `tests/engine/unlocks.test.ts`     | isFeatureUnlocked — Phase 1+2 feature unlock conditions                        |
+| `tests/engine/unlocks.test.ts`     | isFeatureUnlocked — Phase 1+2+3 feature unlock conditions                      |
 | `tests/ui/render.test.ts`          | render() + showOfflineBanner() — Phase 1+2 UI: manager panel, income/sec, tips |
 | `tests/ui/format.test.ts`          | formatMoney — all tiers from cents to scientific notation                      |
-| `e2e/game.spec.ts`                 | Full browser: buy→cook→sell, cold storage, upgrade visibility (Playwright)     |
+| `e2e/game.spec.ts`                 | Full browser: buy→cook→sell, cold storage, equip/staff visibility (Playwright) |
 
 ## Design Decisions
 
@@ -94,6 +100,7 @@ Pure state machine with 3-step clicker flow (Buy → Cook → Sell). Cooking and
 | 011 | `docs/decisions/011-cooking-selling-timers.md`         | 10s cooking + 10s selling timers via tick()            |
 | 012 | `docs/decisions/012-phase1-enhanced-core-loop.md`      | Phase 1: recipes, milestones, 6 upgrades, bulk ops     |
 | 013 | `docs/decisions/013-manager-speed-formula.md`          | Manager speed: reciprocal formula (not subtractive)    |
+| 014 | `docs/decisions/014-phase3-equipment-staff-idle.md`    | Phase 3: equipment, staff, idle diminishing returns    |
 
 ## Plans
 
@@ -113,7 +120,7 @@ Plans live in two directories based on status:
 | 007 | `docs/plans/complete/007-cooking-selling-timers.md`         | Complete | 10s cooking + 10s selling timers                          |
 | 008 | `docs/plans/complete/008-phase1-enhanced-core-loop.md`      | Complete | Implement Phase 1: enhanced core loop from strategy docs  |
 | 009 | `docs/plans/complete/009-phase2-managers-and-automation.md` | Complete | Implement Phase 2: managers, automation, offline earnings |
-| 010 | `docs/plans/todo/010-phase3-equipment-and-staff.md`         | Todo     | Implement Phase 3: equipment, staff, passive bonuses      |
+| 010 | `docs/plans/complete/010-phase3-equipment-and-staff.md`     | Complete | Implement Phase 3: equipment, staff, passive bonuses      |
 | 011 | `docs/plans/todo/011-phase4-prestige-stars.md`              | Todo     | Implement Phase 4: prestige layer 1 (Stars), upgrade tree |
 | 012 | `docs/plans/todo/012-phase5-super-managers.md`              | Todo     | Implement Phase 5: super managers, boosts, auto-recipe    |
 | 013 | `docs/plans/todo/013-phase6-prestige-crowns-franchise.md`   | Todo     | Implement Phase 6: prestige layer 2 (Crowns), franchise   |
