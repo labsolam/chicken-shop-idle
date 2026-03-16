@@ -292,11 +292,16 @@ for (const staffId of STAFF_IDS) {
 
 // --- Game Loop ---
 
-/** Read ?timeScale=N from URL to speed up game time (useful for testing). */
-const TIME_SCALE = Math.max(
-  1,
-  Number(new URLSearchParams(window.location.search).get("timeScale")) || 1,
-);
+/**
+ * Read ?timeScale=N from URL to speed up game time (dev/test only).
+ * Disabled in production builds to prevent cheating.
+ */
+const TIME_SCALE = import.meta.env.DEV
+  ? Math.max(
+      1,
+      Number(new URLSearchParams(window.location.search).get("timeScale")) || 1,
+    )
+  : 1;
 
 let lastTimestamp = performance.now();
 

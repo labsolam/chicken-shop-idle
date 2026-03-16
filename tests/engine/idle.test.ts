@@ -22,13 +22,13 @@ describe("getIdleEfficiency", () => {
   });
 
   it("starts diminishing just after 8 hours", () => {
-    // 1ms past 8h — barely into ramp
+    // 1ms past 8h — barely into ramp, should be just under 1.0
     expect(getIdleEfficiency(8 * HOUR_MS + 1)).toBeLessThan(1.0);
-    expect(getIdleEfficiency(8 * HOUR_MS + 1)).toBeGreaterThan(0.79);
+    expect(getIdleEfficiency(8 * HOUR_MS + 1)).toBeGreaterThan(0.99);
   });
 
-  it("returns 0.7 at 9 hours (midpoint of ramp)", () => {
-    expect(getIdleEfficiency(9 * HOUR_MS)).toBeCloseTo(0.7);
+  it("returns 0.8 at 9 hours (midpoint of ramp)", () => {
+    expect(getIdleEfficiency(9 * HOUR_MS)).toBeCloseTo(0.8);
   });
 
   it("returns 0.6 at exactly 10 hours", () => {
@@ -45,7 +45,7 @@ describe("getIdleEfficiency", () => {
 
   it("linearly interpolates within 8-10h range", () => {
     const quarter = 8 * HOUR_MS + 0.25 * (2 * HOUR_MS); // 8.5h
-    // Expected: 0.8 - 0.25 * 0.2 = 0.75
-    expect(getIdleEfficiency(quarter)).toBeCloseTo(0.75);
+    // Expected: 1.0 - 0.25 * 0.4 = 0.9
+    expect(getIdleEfficiency(quarter)).toBeCloseTo(0.9);
   });
 });

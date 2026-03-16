@@ -1,7 +1,7 @@
 import { GameState } from "../types/game-state";
 import { OfflineResult } from "../engine/offline";
 import {
-  getUpgradeCost,
+  getDiscountedUpgradeCost,
   getEffectiveCookTime,
   getEffectiveSellTime,
   getColdStorageCapacity,
@@ -104,7 +104,7 @@ function renderUpgrade(
     if (costEl) costEl.textContent = "MAX";
     if (btn) btn.disabled = true;
   } else {
-    const cost = getUpgradeCost(type, currentLevel);
+    const cost = getDiscountedUpgradeCost(state, type, currentLevel);
     if (costEl) costEl.textContent = formatMoney(cost);
     if (btn) btn.disabled = state.money < cost;
   }

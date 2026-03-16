@@ -45,7 +45,7 @@ Pure state machine with 3-step clicker flow (Buy → Cook → Sell). Cooking and
 | `src/engine/managers.ts`    | Phase 2 managers — hire/upgrade/click-bonus; 3 manager NPCs, 10 levels  |
 | `src/engine/equipment.ts`   | Phase 3 equipment — 13 items, buy/upgrade, speed/value/slot multipliers |
 | `src/engine/staff.ts`       | Phase 3 staff — 6 members, hire/upgrade, speed/value/cost multipliers   |
-| `src/engine/idle.ts`        | Idle diminishing returns — 8h→80%, 10h→60% efficiency ramp              |
+| `src/engine/idle.ts`        | Idle diminishing returns — full until 8h, linear ramp 100%→60% by 10h  |
 | `src/engine/tick.ts`        | Tick — Phase 3: equip/staff multipliers, idle tracking, all Phase 1+2   |
 | `src/engine/save.ts`        | Pure serialize/deserialize — Phase 1+2+3 fields, old-save compat        |
 | `src/engine/offline.ts`     | Offline earnings — 30% rate × elapsed (4h cap), uses revenueTracker     |

@@ -13,7 +13,7 @@ Phase 3 adds lateral progression through equipment and staff systems, plus idle 
 
 2. **Staff system:** 6 staff members with level-based passive bonuses. Unlike managers (who automate), staff provide always-on multipliers. The Accountant's cost reduction applies to all upgrade purchases via `buyUpgrade()`.
 
-3. **Idle diminishing returns:** After 8h continuous idle, earnings ramp down linearly from 100% to 80% over 2h, then cap at 60%. `continuousIdleMs` is tracked by `tick()` and reset on any player click.
+3. **Idle diminishing returns:** After 8h continuous idle, earnings ramp down linearly from 100% to 60% over 2h (reaching 60% at 10h), then cap at 60%. `continuousIdleMs` is tracked by `tick()` and reset on any player click.
 
 4. **Customer attraction reinterpretation:** Per Plan 010, "customer attraction" and "customer rate" bonuses (Display Case, Neon Sign, Marketing Intern) are reinterpreted as sell speed bonuses since the customer demand system is not implemented.
 
