@@ -341,8 +341,8 @@ describe("getUpgradeCost — tips", () => {
     expect(getUpgradeCost("tips", 0)).toBe(500_000);
   });
 
-  it("tips cost at level 1 (L1→L2): 2_500_000 cents ($25K)", () => {
-    expect(getUpgradeCost("tips", 1)).toBe(2_500_000);
+  it("tips cost at level 1 (L1→L2): 1_250_000 cents ($12.5K)", () => {
+    expect(getUpgradeCost("tips", 1)).toBe(1_250_000);
   });
 
   it("tips cost increases with level", () => {
