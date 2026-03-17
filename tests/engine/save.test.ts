@@ -94,6 +94,17 @@ describe("deserializeState", () => {
       totalChickensBought: 200,
       tipsLevel: 2,
       lastClickTimestamps: { buyer: 1000, cook: 2000, sell: 3000 },
+      // Phase 3
+      equipment: {
+        basic_oven: { owned: true, level: 3 },
+        cash_register: { owned: true, level: 1 },
+      },
+      staff: {
+        line_cook: { hired: true, level: 2 },
+        cashier: { hired: true, level: 1 },
+      },
+      lastActivityTimestamp: 1700000050000,
+      continuousIdleMs: 5000,
     };
     const json = serializeState(original);
     const restored = deserializeState(json);
@@ -206,6 +217,11 @@ describe("deserializeState", () => {
     expect(restored?.revenueTracker.lastComputedRatePerMs).toBe(0);
     // lastOnlineTimestamp falls back to lastUpdateTimestamp for old saves
     expect(restored?.lastOnlineTimestamp).toBe(1700000000000);
+    // Phase 3 defaults
+    expect(restored?.equipment).toEqual({});
+    expect(restored?.staff).toEqual({});
+    expect(restored?.lastActivityTimestamp).toBe(0);
+    expect(restored?.continuousIdleMs).toBe(0);
   });
 
   it("deserializes valid manager state from JSON", () => {
@@ -226,6 +242,53 @@ describe("deserializeState", () => {
     });
     expect(restored?.managers.cook.hired).toBe(true);
     expect(restored?.managers.sell.hired).toBe(false);
+  });
+
+  it("round-trips equipment and staff Record structures", () => {
+    const state = createInitialState();
+    const withPhase3: GameState = {
+      ...state,
+      equipment: {
+        basic_oven: { owned: true, level: 5 },
+        smoker: { owned: true, level: 2 },
+      },
+      staff: {
+        line_cook: { hired: true, level: 3 },
+        accountant: { hired: true, level: 6 },
+      },
+      lastActivityTimestamp: 99999,
+      continuousIdleMs: 12345,
+    };
+    const json = serializeState(withPhase3);
+    const restored = deserializeState(json);
+    expect(restored).not.toBeNull();
+    expect(restored?.equipment).toEqual({
+      basic_oven: { owned: true, level: 5 },
+      smoker: { owned: true, level: 2 },
+    });
+    expect(restored?.staff).toEqual({
+      line_cook: { hired: true, level: 3 },
+      accountant: { hired: true, level: 6 },
+    });
+    expect(restored?.lastActivityTimestamp).toBe(99999);
+    expect(restored?.continuousIdleMs).toBe(12345);
+  });
+
+  it("ignores malformed equipment entries during deserialization", () => {
+    const state = createInitialState();
+    const bad = {
+      ...state,
+      equipment: {
+        good: { owned: true, level: 1 },
+        bad: { owned: "yes", level: 1 }, // owned is wrong type
+        terrible: null,
+      },
+    };
+    const restored = deserializeState(JSON.stringify(bad));
+    expect(restored).not.toBeNull();
+    expect(restored?.equipment.good).toEqual({ owned: true, level: 1 });
+    expect(restored?.equipment.bad).toBeUndefined();
+    expect(restored?.equipment.terrible).toBeUndefined();
   });
 
   it("falls back to default manager state when manager data is malformed", () => {

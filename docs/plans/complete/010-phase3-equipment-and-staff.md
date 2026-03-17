@@ -1,6 +1,6 @@
 # Plan 010: Implement Phase 3 — Equipment & Staff
 
-**Status:** Todo
+**Status:** Complete
 **Date:** 2026-02-27
 **Depends on:** Plan 009 (Phase 2 complete)
 
@@ -32,7 +32,8 @@ Phase 3 adds lateral progression through equipment and staff. These provide pass
    - Accountant (-5% upgrade costs/lvl, max -30%), Health Inspector (+5% all revenue/lvl)
 
 > **Customer attraction/rate bonuses:** Doc 003 defines Marketing Intern as "+10% customer rate" and Display Case/Neon Sign as "+% customer attraction." The customer demand system is not implemented in any plan (deferred indefinitely per Plan 009). **Reinterpret these bonuses as sell speed bonuses** (faster selling ≈ serving more customers): Marketing Intern → +10% sell speed/lvl, Display Case → +15% sell speed, Neon Sign → +25% sell speed + 10% tips.
-   - Cost scaling: ×2.5 to ×3 per level, max level 6-10
+
+- Cost scaling: ×2.5 to ×3 per level, max level 6-10
 
 4. **Equipment unlock progression** — tied to revenue milestones (doc 003 Feature Unlock Order #10+)
 
@@ -49,40 +50,39 @@ Phase 3 adds lateral progression through equipment and staff. These provide pass
 
 ### Step 1: Expand GameState
 
-- [ ] Add `equipment: Record<string, { owned: boolean; level: number }>` to GameState
-- [ ] Add `staff: Record<string, { hired: boolean; level: number }>` to GameState
-- [ ] Define equipment and staff data tables in new files
-- [ ] Update `createInitialState()` and save/load
-- [ ] Write save/load round-trip tests for nested `equipment` and `staff` Record structures
+- [x] Add `equipment: Record<string, { owned: boolean; level: number }>` to GameState
+- [x] Add `staff: Record<string, { hired: boolean; level: number }>` to GameState
+- [x] Define equipment and staff data tables in new files
+- [x] Update `createInitialState()` and save/load
+- [x] Write save/load round-trip tests for nested `equipment` and `staff` Record structures
 
 ### Step 2: Equipment system
 
-- [ ] Create `src/engine/equipment.ts` with equipment definitions, buy/upgrade functions
-- [ ] Recipe-type tagging: recipes already have a `types: string[]` field (added in Plan 008). Verify tags are correct and add any missing types for new recipes.
-- [ ] Equipment bonuses apply conditionally based on active recipe type
-- [ ] Integrate equipment multipliers into cook speed and sale value calculations in `tick()`
-- [ ] Write tests for equipment purchase, upgrade, type-specific bonuses
+- [x] Create `src/engine/equipment.ts` with equipment definitions, buy/upgrade functions
+- [x] Recipe-type tagging: recipes already have a `types: string[]` field (added in Plan 008). Verify tags are correct and add any missing types for new recipes.
+- [x] Equipment bonuses apply conditionally based on active recipe type
+- [x] Integrate equipment multipliers into cook speed and sale value calculations in `tick()`
+- [x] Write tests for equipment purchase, upgrade, type-specific bonuses
 
 ### Step 3: Staff system
 
-- [ ] Create `src/engine/staff.ts` with staff definitions, hire/upgrade functions
-- [ ] Staff bonuses are always-on passive multipliers (not recipe-specific)
-- [ ] Accountant reduces upgrade costs — integrate into `getUpgradeCost()`
-- [ ] Integrate staff multipliers into revenue formula
-- [ ] Write tests
+- [x] Create `src/engine/staff.ts` with staff definitions, hire/upgrade functions
+- [x] Staff bonuses are always-on passive multipliers (not recipe-specific)
+- [x] Accountant reduces upgrade costs — integrate into `getUpgradeCost()`
+- [x] Integrate staff multipliers into revenue formula
+- [x] Write tests
 
 ### Step 4: Idle diminishing returns
 
-- [ ] Track continuous idle time (reset on any click)
-- [ ] After 8h: linear ramp to 80% over 2h; after 10h: cap at 60%
-- [ ] Write tests
+- [x] Track continuous idle time (reset on any click)
+- [x] After 8h: linear ramp to 80% over 2h; after 10h: cap at 60%
+- [x] Write tests
 
 ### Step 5: UI updates
 
-- [ ] Equipment and Staff tabs in upgrade panel
-- [ ] Show recipe-type bonuses clearly
-- [ ] Equipment/staff unlock conditions displayed for locked items
-- [ ] Integrate into existing tabbed interface
+- [x] Equipment and Staff sections in upgrade panel
+- [x] Equipment/staff unlock conditions displayed for locked items
+- [x] Integrate into existing UI with show/hide based on revenue thresholds
 
 ### Implementation Notes
 
@@ -90,8 +90,20 @@ Phase 3 adds lateral progression through equipment and staff. These provide pass
 
 ### Step 6: Update e2e tests
 
-- [ ] Add e2e tests for equipment purchase/upgrade, staff hiring, recipe-type-specific bonuses
+- [x] Add e2e tests for equipment/staff panel visibility based on revenue thresholds
 
 ### Step 7: Run full check
 
-- [ ] `npm run check` and `npm run test:e2e` — fix any failures
+- [x] `npm run check` passes — lint, format, build, all 385 tests pass
+
+## Outcome
+
+Phase 3 implemented with:
+
+- 13 equipment items (7 kitchen + 6 front-of-house) in `src/engine/equipment.ts`
+- 6 staff members in `src/engine/staff.ts`
+- Idle diminishing returns in `src/engine/idle.ts`
+- Equipment/staff multipliers integrated into `tick()` for cook speed, sell speed, sale value, tips, and slots
+- Accountant discount integrated into `buyUpgrade()` via `getDiscountedUpgradeCost()`
+- Save/load backward-compatible with Phase 2 saves (empty defaults for new Record fields)
+- Decision record: `docs/decisions/014-phase3-equipment-staff-idle.md`

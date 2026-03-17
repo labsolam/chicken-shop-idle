@@ -1,7 +1,7 @@
 import { GameState } from "../types/game-state";
 import { OfflineResult } from "../engine/offline";
 import {
-  getUpgradeCost,
+  getDiscountedUpgradeCost,
   getEffectiveCookTime,
   getEffectiveSellTime,
   getColdStorageCapacity,
@@ -21,9 +21,21 @@ import {
   isManagerUnlocked,
   type ManagerKey,
 } from "../engine/managers";
+import {
+  EQUIPMENT,
+  EQUIPMENT_IDS,
+  isEquipmentUnlocked,
+  getEquipmentCost,
+} from "../engine/equipment";
+import {
+  STAFF,
+  STAFF_IDS,
+  isStaffUnlocked,
+  getStaffCost,
+} from "../engine/staff";
 
 /**
- * AGENT CONTEXT: DOM renderer for Phase 1 + Phase 2.
+ * AGENT CONTEXT: DOM renderer for Phase 1 + Phase 2 + Phase 3.
  * Reads game state and updates text content of known elements.
  * No framework — just getElementById and textContent.
  * Element IDs are defined in index.html.
@@ -92,7 +104,7 @@ function renderUpgrade(
     if (costEl) costEl.textContent = "MAX";
     if (btn) btn.disabled = true;
   } else {
-    const cost = getUpgradeCost(type, currentLevel);
+    const cost = getDiscountedUpgradeCost(state, type, currentLevel);
     if (costEl) costEl.textContent = formatMoney(cost);
     if (btn) btn.disabled = state.money < cost;
   }
@@ -334,6 +346,64 @@ export function render(state: GameState): void {
   const managerKeys: ManagerKey[] = ["cook", "sell", "buyer"];
   for (const key of managerKeys) {
     renderManager(state, key);
+  }
+
+  // --- Equipment panel (Phase 3) ---
+  const equipPanelUnlocked = isFeatureUnlocked(state, "equipment_panel");
+  showElement("equipment-section", equipPanelUnlocked);
+  if (equipPanelUnlocked) {
+    for (const equipId of EQUIPMENT_IDS) {
+      const def = EQUIPMENT[equipId];
+      if (!def) continue;
+      const sectionId = `equip-${equipId}`;
+      const unlocked = isEquipmentUnlocked(state, equipId);
+      showElement(sectionId, unlocked);
+      if (!unlocked) continue;
+
+      const current = state.equipment[equipId];
+      const currentLevel = current?.level ?? 0;
+      const atMax = currentLevel >= def.maxLevel;
+
+      setText(`equip-level-${equipId}`, `Lv ${currentLevel}`);
+
+      if (atMax) {
+        setText(`equip-cost-${equipId}`, "MAX");
+        setDisabled(`equip-btn-${equipId}`, true);
+      } else {
+        const cost = getEquipmentCost(equipId, currentLevel);
+        setText(`equip-cost-${equipId}`, formatMoney(cost));
+        setDisabled(`equip-btn-${equipId}`, state.money < cost);
+      }
+    }
+  }
+
+  // --- Staff panel (Phase 3) ---
+  const staffPanelUnlocked = isFeatureUnlocked(state, "staff_panel");
+  showElement("staff-section", staffPanelUnlocked);
+  if (staffPanelUnlocked) {
+    for (const staffId of STAFF_IDS) {
+      const def = STAFF[staffId];
+      if (!def) continue;
+      const sectionId = `staff-${staffId}`;
+      const unlocked = isStaffUnlocked(state, staffId);
+      showElement(sectionId, unlocked);
+      if (!unlocked) continue;
+
+      const current = state.staff[staffId];
+      const currentLevel = current?.level ?? 0;
+      const atMax = currentLevel >= def.maxLevel;
+
+      setText(`staff-level-${staffId}`, `Lv ${currentLevel}`);
+
+      if (atMax) {
+        setText(`staff-cost-${staffId}`, "MAX");
+        setDisabled(`staff-btn-${staffId}`, true);
+      } else {
+        const cost = getStaffCost(staffId, currentLevel);
+        setText(`staff-cost-${staffId}`, formatMoney(cost));
+        setDisabled(`staff-btn-${staffId}`, state.money < cost);
+      }
+    }
   }
 
   // --- Milestone progress ---

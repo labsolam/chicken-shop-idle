@@ -18,9 +18,23 @@ import {
 } from "./milestones";
 import { getManagerInterval, getManagerBatchSize } from "./managers";
 import { RAW_CHICKEN_COST } from "./buy-chicken";
+import {
+  getEquipmentCookSpeedMultiplier,
+  getEquipmentSellSpeedMultiplier,
+  getEquipmentSaleValueMultiplier,
+  getEquipmentTipBonus,
+  getEquipmentExtraCookingSlots,
+  getEquipmentExtraSellRegisters,
+} from "./equipment";
+import {
+  getStaffCookSpeedMultiplier,
+  getStaffSellSpeedMultiplier,
+  getStaffSaleValueMultiplier,
+} from "./staff";
+import { getIdleEfficiency } from "./idle";
 
 /**
- * AGENT CONTEXT: Core game tick function (Phase 2).
+ * AGENT CONTEXT: Core game tick function (Phase 3).
  * Advances cooking and selling timers by deltaMs.
  * Completes cook jobs in batches (cookingSlots per cycle).
  * Completes sell jobs in batches (sellingRegisters per cycle).
@@ -47,31 +61,53 @@ export function tick(
   deltaMs: number,
   rng: () => number = Math.random,
 ): GameState {
-  // Step 1: Compute effective prices/times upfront
+  // Step 1: Compute effective prices/times upfront (with Phase 3 multipliers)
   const cookingRecipe = getRecipe(state.cookingRecipeId);
+  const equipCookSpeed = getEquipmentCookSpeedMultiplier(state);
+  const staffCookSpeed = getStaffCookSpeedMultiplier(state);
   const cookTimeMs =
     (getEffectiveCookTime(cookingRecipe.cookTimeSeconds, state.cookSpeedLevel) /
-      getMilestoneCookSpeedMultiplier(state)) *
+      (getMilestoneCookSpeedMultiplier(state) *
+        equipCookSpeed *
+        staffCookSpeed)) *
     1000;
 
+  const equipSellSpeed = getEquipmentSellSpeedMultiplier(state);
+  const staffSellSpeed = getStaffSellSpeedMultiplier(state);
   const sellTimeMs =
     (getEffectiveSellTime(state.sellSpeedLevel) /
-      getMilestoneSellSpeedMultiplier(state)) *
+      (getMilestoneSellSpeedMultiplier(state) *
+        equipSellSpeed *
+        staffSellSpeed)) *
     1000;
 
   const milestoneMultiplier = getMilestoneMultiplier(state);
+  const equipSaleValue = getEquipmentSaleValueMultiplier(
+    state,
+    cookingRecipe.types,
+  );
+  const staffSaleValue = getStaffSaleValueMultiplier(state);
+  const idleEfficiency = getIdleEfficiency(state.continuousIdleMs);
   const effectiveSalePrice = Math.round(
     getEffectiveChickenPrice(
       cookingRecipe.saleValueCents,
       state.chickenValueLevel,
-    ) * milestoneMultiplier,
+    ) *
+      milestoneMultiplier *
+      equipSaleValue *
+      staffSaleValue *
+      idleEfficiency,
   );
 
-  const cookingSlots = getCookingSlots(state.cookingSlotsLevel);
-  const sellingRegisters = getSellingRegisters(state.sellingRegistersLevel);
+  const cookingSlots =
+    getCookingSlots(state.cookingSlotsLevel) +
+    getEquipmentExtraCookingSlots(state);
+  const sellingRegisters =
+    getSellingRegisters(state.sellingRegistersLevel) +
+    getEquipmentExtraSellRegisters(state);
 
   const tipChance = getTipChance(state.tipsLevel);
-  const tipBonus = getTipBonus(state.tipsLevel);
+  const tipBonus = getTipBonus(state.tipsLevel) + getEquipmentTipBonus(state);
 
   // Step 2: Process selling timer
   let sellingCount = state.sellingCount;
@@ -226,7 +262,10 @@ export function tick(
     };
   }
 
-  // Step 6: Check milestones (applied next tick via earnedMilestones)
+  // Step 6: Track continuous idle time (Phase 3)
+  const continuousIdleMs = state.continuousIdleMs + deltaMs;
+
+  // Step 7: Check milestones (applied next tick via earnedMilestones)
   const newState: GameState = {
     ...state,
     cookingCount,
@@ -243,6 +282,7 @@ export function tick(
     totalChickensBought,
     managers,
     revenueTracker: tracker,
+    continuousIdleMs,
   };
 
   return checkMilestones(newState);

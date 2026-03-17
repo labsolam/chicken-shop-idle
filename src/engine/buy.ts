@@ -1,4 +1,5 @@
 import { GameState } from "../types/game-state";
+import { getAccountantDiscount } from "./staff";
 
 /**
  * AGENT CONTEXT: Upgrade purchase system (Phase 1 expansion).
@@ -165,8 +166,21 @@ function upgradeLevelKey(
 }
 
 /**
+ * Returns the cost in cents after applying the Accountant staff discount.
+ * Used for display and affordability checks when the discount should be shown.
+ */
+export function getDiscountedUpgradeCost(
+  state: GameState,
+  type: UpgradeType,
+  currentLevel: number,
+): number {
+  const baseCost = getUpgradeCost(type, currentLevel);
+  return Math.floor(baseCost * getAccountantDiscount(state));
+}
+
+/**
  * Attempts to buy an upgrade. Returns unchanged state if money is insufficient
- * or the upgrade is already at its cap.
+ * or the upgrade is already at its cap. Applies Accountant staff discount.
  */
 export function buyUpgrade(state: GameState, type: UpgradeType): GameState {
   const levelKey = upgradeLevelKey(type);
@@ -177,7 +191,7 @@ export function buyUpgrade(state: GameState, type: UpgradeType): GameState {
     return { ...state };
   }
 
-  const cost = getUpgradeCost(type, currentLevel);
+  const cost = getDiscountedUpgradeCost(state, type, currentLevel);
 
   if (state.money < cost) {
     return { ...state };
