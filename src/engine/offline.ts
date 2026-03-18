@@ -56,6 +56,7 @@ export function calculateOfflineEarnings(
     state: {
       ...state,
       money: state.money + moneyEarned,
+      totalRevenueCents: state.totalRevenueCents + moneyEarned,
       lastUpdateTimestamp: nowTimestamp,
       lastOnlineTimestamp: nowTimestamp,
     },

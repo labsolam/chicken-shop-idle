@@ -188,6 +188,7 @@ export function applyClickBonus(
   return {
     ...state,
     money: state.money + bonus,
+    totalRevenueCents: state.totalRevenueCents + bonus,
     lastClickTimestamps: {
       ...state.lastClickTimestamps,
       [action]: nowMs,
